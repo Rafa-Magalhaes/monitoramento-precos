@@ -1,0 +1,36 @@
+# ====================== ARQUIVOS GERADOS / BUILD ======================
+HELP.md
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+out/
+bin/
+
+# ====================== IDEs (IntelliJ, Eclipse, VSCode) ======================
+.idea/
+*.iws
+*.iml
+*.ipr
+.classpath
+.project
+.settings/
+.sts4-cache/
+.apt_generated/
+.vscode/
+
+# ====================== ARQUIVOS SENSÍVEIS (NUNCA COMMITAR) ======================
+# Variáveis de ambiente e senhas
+.env
+*.env
+.env.*
+
+# Configurações com credenciais locais/dev
+application-dev.yml
+application-prod.yml
+
+# Chaves, certificados e logs
+*.jks
+*.p12
+*.key
+*.pem
+*.log
