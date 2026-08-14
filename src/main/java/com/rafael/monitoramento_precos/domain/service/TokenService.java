@@ -6,6 +6,8 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.rafael.monitoramento_precos.domain.model.Usuario;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -36,5 +38,17 @@ public class TokenService {
 
     private Instant gerarDataExpiracao() {
         return LocalDateTime.now().plusHours(1).toInstant(ZoneOffset.of("-03:00"));
+    }
+
+    public DecodedJWT validarToken(String token) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+            return JWT.require(algorithm)
+                    .withIssuer("monitoramento-precos")
+                    .build()
+                    .verify(token);
+        } catch (JWTVerificationException exception) {
+            return null;
+        }
     }
 }
