@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Pattern;
 
 @Getter
 @Builder
@@ -25,6 +26,8 @@ public class UsuarioCreateRequestDTO {
 
     @NotBlank(message = "A senha não pode estar em branco")
     @Size(min = 8, max = 50, message = "A senha deve ter entre 8 e 50 caracteres")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#])[A-Za-z\\d@$!%*?&#]{8,}$",
+            message = "A senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial")
     private String senha;
 
 }
