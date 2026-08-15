@@ -34,4 +34,8 @@ public class MissaoBuscaService {
 
         return missaoBuscaRepository.save(novaMissao);
     }
+
+    public List<MissaoBusca> listarMissoesUsuario(UUID usuarioId) {
+        return missaoBuscaRepository.findByUsuarioId(usuarioId);
+    }
 }

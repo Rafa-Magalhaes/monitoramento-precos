@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/missoes")
 @RequiredArgsConstructor
@@ -29,5 +31,17 @@ public class MissaoBuscaController {
         MissaoBuscaResponseDTO responseDTO = missaoBuscaConverter.toResponseDTO(missaoSalva);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<MissaoBuscaResponseDTO>> listar(JwtAuthenticationToken jwtToken) {
+
+        List<MissaoBusca> missoes = missaoBuscaService.listarMissoesUsuario(jwtToken.getUsuarioId());
+
+        List<MissaoBuscaResponseDTO> response = missoes.stream()
+                .map(missaoBuscaConverter::toResponseDTO)
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 }

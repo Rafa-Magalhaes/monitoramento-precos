@@ -10,6 +10,8 @@ Funcionalidades já implementadas:
 * [x] **Domínio de Usuário:** Cadastro com validação estrita e tratamento global de exceções (RFC 7807).
 * [x] **Segurança Criptográfica:** Hashing de senhas de altíssima segurança com `Argon2id` + `Pepper`.
 * [x] **Autenticação e Autorização:** Proteção de rotas com Spring Security, validação de JSON Web Tokens (JWT) e extração de identidade segura via `JwtAuthenticationToken`.
+* [x] **Domínio de Monitoramento (NoSQL):** Persistência de dados poliglota. Cadastro de "Missões de Busca" vinculadas ao usuário de forma segura, com bloqueio contra buscas duplicadas.
+* [x] **Inteligência de Filtragem:** Extração e fatiamento automático de palavras-chave a partir da intenção do usuário e suporte a *Blacklists* (palavras proibidas) para blindar a precisão futura do robô de Web Scraping.
 
 ## 🛠️ Stack Tecnológico
 * **Linguagem:** Java 21
