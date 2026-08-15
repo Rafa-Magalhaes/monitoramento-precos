@@ -25,8 +25,8 @@ bin/
 .env.*
 
 # Configurações com credenciais locais/dev
-application-dev.yaml
-application-prod.yaml
+application-dev.yml
+application-prod.yml
 
 # Chaves, certificados e logs
 *.jks
