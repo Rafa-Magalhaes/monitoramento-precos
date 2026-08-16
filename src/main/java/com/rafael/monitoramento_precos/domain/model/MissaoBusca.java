@@ -56,6 +56,8 @@ public class MissaoBusca {
     @CreatedDate
     private LocalDateTime dataCriacao;
 
+    private LocalDateTime dataExpiracao;
+
     @LastModifiedDate
     private LocalDateTime dataAtualizacao;
 }
