@@ -5,6 +5,7 @@ import com.rafael.monitoramento_precos.api.dto.response.MissaoBuscaResponseDTO;
 import com.rafael.monitoramento_precos.domain.model.MissaoBusca;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +21,7 @@ public class MissaoBuscaConverter {
                 .precoAlvo(dto.getPrecoAlvo())
                 .palavrasChaveExigidas(extrairPalavrasChave(dto.getTermoDaBusca()))
                 .palavrasChaveProibidas(dto.getPalavrasChaveProibidas() != null ? dto.getPalavrasChaveProibidas() : new ArrayList<>())
+                .dataExpiracao(LocalDateTime.now().plusMonths(6))
                 .build();
     }
 
