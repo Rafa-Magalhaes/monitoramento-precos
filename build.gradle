@@ -30,6 +30,9 @@ dependencies {
 	// JWT
 	implementation 'com.auth0:java-jwt:4.4.0'
 
+	// Web Scraping (Motor de Busca)
+	implementation 'org.jsoup:jsoup:1.17.2'
+
 	// Bancos de Dados e Ferramentas
 	runtimeOnly 'org.postgresql:postgresql'
 	compileOnly 'org.projectlombok:lombok'

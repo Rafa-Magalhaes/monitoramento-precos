@@ -14,5 +14,6 @@ public class HistoricoPreco {
 
     private BigDecimal precoMinimo;
     private BigDecimal precoMedio;
+    private String linkProdutoMaisBarato;
     private LocalDateTime dataCaptura;
 }
