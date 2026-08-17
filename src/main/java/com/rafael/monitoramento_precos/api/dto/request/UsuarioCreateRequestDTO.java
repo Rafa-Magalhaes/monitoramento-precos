@@ -30,4 +30,7 @@ public class UsuarioCreateRequestDTO {
             message = "A senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial")
     private String senha;
 
+    @NotBlank(message = "O telefone não pode estar em branco")
+    @Size(min = 10, max = 20, message = "O telefone deve ter entre 10 e 20 caracteres")
+    private String telefone;
 }
