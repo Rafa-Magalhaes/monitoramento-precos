@@ -26,7 +26,7 @@ public class MonitoramentoWorkerService {
     private final KabumScraperService kabumScraperService;
     private final NotificacaoWhatsAppService notificacaoWhatsAppService;
 
-    @Scheduled(cron = "0 0 2,14 * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void executarMonitoramentoDiario() {
         log.info("Iniciando rotina de Web Scraping autônoma...");
 
