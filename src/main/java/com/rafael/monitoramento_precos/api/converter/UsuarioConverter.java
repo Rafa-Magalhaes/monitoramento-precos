@@ -14,6 +14,7 @@ public class UsuarioConverter {
                 .nome(dto.getNome())
                 .email(dto.getEmail())
                 .senha(senhaHash)
+                .telefone(dto.getTelefone())
                 .role(Role.ROLE_USER)
                 .ativo(true)
                 .build();
@@ -24,6 +25,7 @@ public class UsuarioConverter {
                 .id(usuario.getId())
                 .nome(usuario.getNome())
                 .email(usuario.getEmail())
+                .telefone(usuario.getTelefone())
                 .role(usuario.getRole())
                 .build();
     }

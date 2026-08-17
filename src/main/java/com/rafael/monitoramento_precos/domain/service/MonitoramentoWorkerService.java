@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ public class MonitoramentoWorkerService {
 
     private final MissaoBuscaRepository missaoBuscaRepository;
     private final KabumScraperService kabumScraperService;
+    private final NotificacaoWhatsAppService notificacaoWhatsAppService;
 
     @Scheduled(cron = "0 0 2,14 * * *")
     public void executarMonitoramentoDiario() {
@@ -103,7 +105,7 @@ public class MonitoramentoWorkerService {
         log.info("Histórico salvo para '{}' | Mínimo: R${} | Médio: R${}",
                 missao.getTermoDaBusca(), produtoMaisBarato.getPreco(), precoMedio);
 
-        // TODO: Chamar o Domínio de Notificação (WhatsApp) aqui na próxima Vertical Slice!
+        notificacaoWhatsAppService.processarGatilhosENotificar(missao, produtoMaisBarato, precoMedio);
     }
 
     private void verificarHealthCheck(int qtdMissoes, int totalProdutosEncontrados) {
@@ -111,7 +113,7 @@ public class MonitoramentoWorkerService {
             log.error("🚨 ALERTA CRÍTICO DE SISTEMA (HEALTH CHECK) 🚨");
             log.error("O Motor de Scraping retornou 0 resultados para TODAS as missões.");
             log.error("Isso indica um provável bloqueio de IP ou mudança drástica no CSS da Kabum.");
-            // TODO: Integrar disparo direto de WhatsApp para o número do Administrador!
+            notificacaoWhatsAppService.notificarHealthCheckAdmin();
         }
     }
 }
