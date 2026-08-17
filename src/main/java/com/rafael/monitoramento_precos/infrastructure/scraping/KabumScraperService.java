@@ -10,6 +10,7 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,16 +33,24 @@ public class KabumScraperService {
                     .timeout(10000)
                     .get();
 
-            Elements cardsProdutos = doc.select("div.productCard");
+            // --- INÍCIO DO BLOCO DE DEBUG (Visão de Raio-X) ---
+            log.info("================ RAIOS-X DO SCRAPING ================");
+            log.info("TÍTULO DA PÁGINA: {}", doc.title());
+
+            // Tenta buscar de forma mais genérica, ignorando se é div, article, etc.
+            Elements cardsProdutos = doc.select(".productCard");
+            log.info("QTD DE CARDS ENCONTRADOS (Pela classe genérica): {}", cardsProdutos.size());
+            log.info("=====================================================");
+            // --- FIM DO BLOCO DE DEBUG ---
 
             for (Element card : cardsProdutos) {
                 if (produtosValidos.size() >= 5) {
                     break;
                 }
 
-                String titulo = extrairTextoSeguro(card, "span.nameCard");
-                String precoTexto = extrairTextoSeguro(card, "span.priceCard");
-                // Captura a tag <a> que envelopa o produto e extrai a URL
+                // Deixamos genérico também (sem prefixos como 'span' ou 'div')
+                String titulo = extrairTextoSeguro(card, ".nameCard");
+                String precoTexto = extrairTextoSeguro(card, ".priceCard");
                 String linkParcial = extrairLinkSeguro(card, "a");
 
                 if (titulo.isBlank() || precoTexto.isBlank() || linkParcial.isBlank()) {
@@ -83,16 +92,18 @@ public class KabumScraperService {
     }
 
     private boolean isProdutoRelevante(String tituloProduto, List<String> exigidas, List<String> proibidas) {
-        String tituloFormatado = tituloProduto.toUpperCase();
+        String tituloLimpo = removerAcentos(tituloProduto.toUpperCase());
 
         for (String palavraProibida : proibidas) {
-            if (tituloFormatado.contains(palavraProibida.toUpperCase())) {
+            String proibidaLimpa = removerAcentos(palavraProibida.toUpperCase());
+            if (tituloLimpo.contains(proibidaLimpa)) {
                 return false;
             }
         }
 
         for (String palavraExigida : exigidas) {
-            if (!tituloFormatado.contains(palavraExigida.toUpperCase())) {
+            String exigidaLimpa = removerAcentos(palavraExigida.toUpperCase());
+            if (!tituloLimpo.contains(exigidaLimpa)) {
                 return false;
             }
         }
@@ -108,5 +119,13 @@ public class KabumScraperService {
                 .replace(",", ".")
                 .trim();
         return new BigDecimal(valorLimpo);
+    }
+
+    private String removerAcentos(String texto) {
+        if (texto == null) return "";
+        // Decompõe o texto separando o caractere base do seu acento (ex: 'é' vira 'e' + '´')
+        String normalizado = Normalizer.normalize(texto, Normalizer.Form.NFD);
+        // Usa Expressão Regular (\p{M}) para varrer a string e arrancar apenas os sinais gráficos
+        return normalizado.replaceAll("\\p{M}", "");
     }
 }
