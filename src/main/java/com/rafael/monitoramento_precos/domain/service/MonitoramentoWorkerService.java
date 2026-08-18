@@ -3,7 +3,7 @@ package com.rafael.monitoramento_precos.domain.service;
 import com.rafael.monitoramento_precos.domain.model.HistoricoPreco;
 import com.rafael.monitoramento_precos.domain.model.MissaoBusca;
 import com.rafael.monitoramento_precos.infrastructure.repository.MissaoBuscaRepository;
-import com.rafael.monitoramento_precos.infrastructure.scraping.KabumScraperService;
+import com.rafael.monitoramento_precos.infrastructure.scraping.MercadoLivreScraperService;
 import com.rafael.monitoramento_precos.infrastructure.scraping.dto.ProdutoScrapedDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +15,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 @Slf4j
 @Service
@@ -23,12 +25,14 @@ import java.util.List;
 public class MonitoramentoWorkerService {
 
     private final MissaoBuscaRepository missaoBuscaRepository;
-    private final KabumScraperService kabumScraperService;
+    private final MercadoLivreScraperService mercadoLivreScraperService;
     private final NotificacaoWhatsAppService notificacaoWhatsAppService;
 
-    @Scheduled(cron = "0 * * * * *")
+    private record MissaoNaFila(MissaoBusca missao, int tentativaAtual) {}
+
+    @Scheduled(cron = "0 */5 * * * *") // Roda a cada 5 minutos (Padrão de Teste)
     public void executarMonitoramentoDiario() {
-        log.info("Iniciando rotina de Web Scraping autônoma...");
+        log.info("Iniciando rotina de Web Scraping autônoma com Fila de Retry...");
 
         List<MissaoBusca> missoesAtivas = missaoBuscaRepository.findByAtivoTrue();
 
@@ -37,23 +41,41 @@ public class MonitoramentoWorkerService {
             return;
         }
 
+        Queue<MissaoNaFila> fila = new LinkedList<>();
+        missoesAtivas.forEach(missao -> fila.add(new MissaoNaFila(missao, 1)));
+
         int totalProdutosEncontradosNaRodada = 0;
 
-        for (MissaoBusca missao : missoesAtivas) {
+        while (!fila.isEmpty()) {
+            MissaoNaFila itemAtual = fila.poll(); // Tira o primeiro da fila
+            MissaoBusca missao = itemAtual.missao();
+            int tentativa = itemAtual.tentativaAtual();
+
             try {
-                List<ProdutoScrapedDTO> produtos = kabumScraperService.buscarProdutos(missao);
+                log.info("Processando missão: [{}] (Tentativa {}/3)", missao.getTermoDaBusca(), tentativa);
+                List<ProdutoScrapedDTO> produtos = mercadoLivreScraperService.buscarProdutos(missao);
 
                 if (produtos.isEmpty()) {
                     log.warn("Nenhum produto válido encontrado para a missão: {}", missao.getTermoDaBusca());
-                    continue;
+                } else {
+                    totalProdutosEncontradosNaRodada += produtos.size();
+                    processarESalvarHistorico(missao, produtos);
                 }
 
-                totalProdutosEncontradosNaRodada += produtos.size();
-                processarESalvarHistorico(missao, produtos);
+                Thread.sleep(5000);
 
             } catch (Exception e) {
-                // Se uma missão falhar, o try-catch garante que o robô não capote e continue para a próxima!
-                log.error("Falha isolada ao processar missão ID: {}", missao.getId(), e);
+                log.error("Falha de rede/proxy na missão [{}]: {}", missao.getTermoDaBusca(), e.getMessage());
+
+                if (tentativa < 3) {
+                    log.warn("Enviando missão [{}] para o FINAL da fila de reprocessamento...", missao.getTermoDaBusca());
+
+                    fila.add(new MissaoNaFila(missao, tentativa + 1));
+
+                    try { Thread.sleep(5000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                } else {
+                    log.error("🚨 Missão [{}] ABORTADA após 3 tentativas falhas. O Proxy não conseguiu resolver.", missao.getTermoDaBusca());
+                }
             }
         }
 
@@ -112,7 +134,7 @@ public class MonitoramentoWorkerService {
         if (qtdMissoes > 0 && totalProdutosEncontrados == 0) {
             log.error("🚨 ALERTA CRÍTICO DE SISTEMA (HEALTH CHECK) 🚨");
             log.error("O Motor de Scraping retornou 0 resultados para TODAS as missões.");
-            log.error("Isso indica um provável bloqueio de IP ou mudança drástica no CSS da Kabum.");
+            log.error("Isso indica bloqueio ou mudança no DOM do Mercado Livre.");
             notificacaoWhatsAppService.notificarHealthCheckAdmin();
         }
     }
