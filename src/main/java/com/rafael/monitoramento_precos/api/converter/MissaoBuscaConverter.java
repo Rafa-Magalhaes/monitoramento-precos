@@ -5,6 +5,7 @@ import com.rafael.monitoramento_precos.api.dto.response.MissaoBuscaResponseDTO;
 import com.rafael.monitoramento_precos.domain.model.MissaoBusca;
 import org.springframework.stereotype.Component;
 
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,8 +42,16 @@ public class MissaoBuscaConverter {
         if (termo == null || termo.isBlank()) {
             return new ArrayList<>();
         }
-        // Remove espaços extras, converte para maiúsculo e transforma em uma lista
-        return Arrays.stream(termo.trim().toUpperCase().split("\\s+"))
+
+        // 1. Remove acentos e sinais gráficos
+        String termoSemAcento = Normalizer.normalize(termo, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+
+        // 2. Troca qualquer pontuação (vírgula, ponto, traço) por espaço em branco
+        String termoLimpo = termoSemAcento.replaceAll("\\p{Punct}", " ");
+
+        // 3. Converte para maiúsculo, recorta e FILTRA as Stop Words (1 ou 2 caracteres)
+        return Arrays.stream(termoLimpo.trim().toUpperCase().split("\\s+"))
+                .filter(palavra -> palavra.length() > 2) // Nova trava de segurança de negócio!
                 .toList();
     }
 }
