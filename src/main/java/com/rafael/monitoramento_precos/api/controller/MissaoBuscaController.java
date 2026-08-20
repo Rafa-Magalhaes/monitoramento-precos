@@ -44,4 +44,14 @@ public class MissaoBuscaController {
 
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(
+            @PathVariable String id,
+            JwtAuthenticationToken jwtToken) {
+
+        missaoBuscaService.excluirMissao(id, jwtToken.getUsuarioId());
+
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -3,6 +3,7 @@ package com.rafael.monitoramento_precos.domain.service;
 import com.rafael.monitoramento_precos.api.converter.MissaoBuscaConverter;
 import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaCreateRequestDTO;
 import com.rafael.monitoramento_precos.domain.exception.ConflictException;
+import com.rafael.monitoramento_precos.domain.exception.ResourceNotFoundException;
 import com.rafael.monitoramento_precos.domain.model.MissaoBusca;
 import com.rafael.monitoramento_precos.infrastructure.repository.MissaoBuscaRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,5 +38,16 @@ public class MissaoBuscaService {
 
     public List<MissaoBusca> listarMissoesUsuario(UUID usuarioId) {
         return missaoBuscaRepository.findByUsuarioId(usuarioId);
+    }
+
+    public void excluirMissao(String missaoId, UUID usuarioIdToken) {
+        MissaoBusca missao = missaoBuscaRepository.findById(missaoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Missão de busca não encontrada."));
+
+        if (!missao.getUsuarioId().equals(usuarioIdToken)) {
+            throw new ConflictException("Acesso negado. Você não tem permissão para excluir esta missão.");
+        }
+
+        missaoBuscaRepository.delete(missao);
     }
 }
