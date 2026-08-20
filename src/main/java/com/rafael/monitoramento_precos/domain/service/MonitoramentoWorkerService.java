@@ -30,7 +30,7 @@ public class MonitoramentoWorkerService {
 
     private record MissaoNaFila(MissaoBusca missao, int tentativaAtual) {}
 
-    @Scheduled(cron = "0 */5 * * * *") // Roda a cada 5 minutos (Padrão de Teste)
+    @Scheduled(cron = "0 0 2,14 * * *")
     public void executarMonitoramentoDiario() {
         log.info("Iniciando rotina de Web Scraping autônoma com Fila de Retry...");
 

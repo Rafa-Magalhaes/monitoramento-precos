@@ -6,6 +6,9 @@ import lombok.Getter;
 @Getter
 @Builder
 public class WhatsAppMessageRequestDTO {
-    private String number;
-    private String text;
+
+    // Identificador do chat no formato 55DDDNUMERO@c.us
+    private String chatId;
+
+    private String message;
 }

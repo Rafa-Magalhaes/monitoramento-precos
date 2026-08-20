@@ -10,7 +10,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 		"spring.data.mongodb.uri=mongodb://localhost:27018/monitoramento_db",
 		"api.security.token.secret=chave-falsa-jwt",
 		"api.security.pepper=pimenta-falsa-pepper",
-		"api.scraperapi.key=chave-falsa-scraperapi-para-testes"
+		"api.scraperapi.key=chave-falsa-scraperapi-para-testes",
+		"api.whatsapp.id-instance=teste",
+		"api.whatsapp.api-token-instance=teste"
 })
 class MonitoramentoPrecosApplicationTests {
 
