@@ -50,4 +50,8 @@ public class MissaoBuscaService {
 
         missaoBuscaRepository.delete(missao);
     }
+
+    public void excluirTodasMissoes(UUID usuarioIdToken) {
+        missaoBuscaRepository.deleteByUsuarioId(usuarioIdToken);
+    }
 }
