@@ -2,6 +2,7 @@ package com.rafael.monitoramento_precos.api.controller;
 
 import com.rafael.monitoramento_precos.api.converter.MissaoBuscaConverter;
 import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaCreateRequestDTO;
+import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaUpdateBlacklistRequestDTO;
 import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaUpdateTermoRequestDTO;
 import com.rafael.monitoramento_precos.api.dto.response.MissaoBuscaResponseDTO;
 import com.rafael.monitoramento_precos.domain.model.MissaoBusca;
@@ -71,6 +72,18 @@ public class MissaoBuscaController {
             JwtAuthenticationToken jwtToken) {
 
         MissaoBusca missaoAtualizada = missaoBuscaService.atualizarTermoBusca(id, jwtToken.getUsuarioId(), requestDTO);
+        MissaoBuscaResponseDTO responseDTO = missaoBuscaConverter.toResponseDTO(missaoAtualizada);
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @PatchMapping("/{id}/blacklist")
+    public ResponseEntity<MissaoBuscaResponseDTO> atualizarBlacklist(
+            @PathVariable String id,
+            @RequestBody MissaoBuscaUpdateBlacklistRequestDTO requestDTO,
+            JwtAuthenticationToken jwtToken) {
+
+        MissaoBusca missaoAtualizada = missaoBuscaService.atualizarBlacklist(id, jwtToken.getUsuarioId(), requestDTO);
         MissaoBuscaResponseDTO responseDTO = missaoBuscaConverter.toResponseDTO(missaoAtualizada);
 
         return ResponseEntity.ok(responseDTO);

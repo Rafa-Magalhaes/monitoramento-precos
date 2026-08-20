@@ -2,6 +2,7 @@ package com.rafael.monitoramento_precos.domain.service;
 
 import com.rafael.monitoramento_precos.api.converter.MissaoBuscaConverter;
 import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaCreateRequestDTO;
+import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaUpdateBlacklistRequestDTO;
 import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaUpdateTermoRequestDTO;
 import com.rafael.monitoramento_precos.domain.exception.ConflictException;
 import com.rafael.monitoramento_precos.domain.exception.ResourceNotFoundException;
@@ -75,6 +76,21 @@ public class MissaoBuscaService {
 
         missao.setTermoDaBusca(dto.getTermoDaBusca());
         missao.setPalavrasChaveExigidas(missaoBuscaConverter.extrairPalavrasChave(dto.getTermoDaBusca()));
+
+        return missaoBuscaRepository.save(missao);
+    }
+
+    public MissaoBusca atualizarBlacklist(String missaoId, UUID usuarioIdToken, MissaoBuscaUpdateBlacklistRequestDTO dto) {
+        MissaoBusca missao = missaoBuscaRepository.findById(missaoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Missão de busca não encontrada."));
+
+        if (!missao.getUsuarioId().equals(usuarioIdToken)) {
+            throw new ConflictException("Acesso negado. Você não tem permissão para alterar esta missão.");
+        }
+
+        List<String> novaBlacklist = dto.getPalavrasChaveProibidas() != null ? dto.getPalavrasChaveProibidas() : List.of();
+
+        missao.setPalavrasChaveProibidas(novaBlacklist);
 
         return missaoBuscaRepository.save(missao);
     }
