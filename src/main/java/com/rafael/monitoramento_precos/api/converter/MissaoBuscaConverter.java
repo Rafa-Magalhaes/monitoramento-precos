@@ -38,7 +38,7 @@ public class MissaoBuscaConverter {
                 .build();
     }
 
-    private List<String> extrairPalavrasChave(String termo) {
+    public List<String> extrairPalavrasChave(String termo) {
         if (termo == null || termo.isBlank()) {
             return new ArrayList<>();
         }
