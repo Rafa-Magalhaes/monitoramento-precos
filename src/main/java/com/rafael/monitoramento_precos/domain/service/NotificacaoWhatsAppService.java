@@ -22,8 +22,11 @@ public class NotificacaoWhatsAppService {
     private final WhatsAppClient whatsAppClient;
     private final UsuarioRepository usuarioRepository;
 
-    @Value("${api.whatsapp.apikey:ChaveFalsaParaTestes}")
-    private String apiKey;
+    @Value("${api.whatsapp.id-instance:id-falso-teste}")
+    private String idInstance;
+
+    @Value("${api.whatsapp.api-token-instance:token-falso-teste}")
+    private String apiTokenInstance;
 
     @Value("${app.admin.telefone:+5511999999999}")
     private String telefoneAdmin;
@@ -33,16 +36,14 @@ public class NotificacaoWhatsAppService {
         Usuario usuario = usuarioRepository.findById(missao.getUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado para envio de notificação."));
 
-        // Gatilho A: Alvo Atingido (Preço Mínimo <= Preço Alvo)
         if (produtoMaisBarato.getPreco().compareTo(missao.getPrecoAlvo()) <= 0) {
             boolean isRecorde = verificarRecordeHistorico(missao, produtoMaisBarato.getPreco());
             String mensagem = montarMensagemCenarioA(missao, produtoMaisBarato, isRecorde);
 
             disparar(usuario.getTelefone(), mensagem);
-            return; // Se atingiu o alvo principal, não envia a notificação de média (Cenário B) para não floodar o usuário.
+            return;
         }
 
-        // Gatilho B: Oportunidade de Mercado (Queda >= 15% da média histórica)
         if (missao.getMediaPrecoHistorico() != null && missao.getMediaPrecoHistorico().compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal limiteOportunidade = missao.getMediaPrecoHistorico().multiply(new BigDecimal("0.85"));
 
@@ -54,7 +55,7 @@ public class NotificacaoWhatsAppService {
     }
 
     public void notificarHealthCheckAdmin() {
-        String mensagem = "🚨 ALERTA CRÍTICO: O Motor de Scraping retornou 0 resultados. Possível alteração de layout na Kabum ou IP bloqueado!";
+        String mensagem = "🚨 ALERTA CRÍTICO: O Motor de Scraping retornou 0 resultados. Possível alteração de layout ou IP bloqueado!";
         disparar(telefoneAdmin, mensagem);
     }
 
@@ -62,7 +63,6 @@ public class NotificacaoWhatsAppService {
         long qtdPrecosNoMesmoPatamar = missao.getHistoricoDePrecos().stream()
                 .filter(h -> h.getPrecoMinimo().compareTo(precoAtual) <= 0)
                 .count();
-
         return qtdPrecosNoMesmoPatamar == 1;
     }
 
@@ -85,20 +85,36 @@ public class NotificacaoWhatsAppService {
                 "Notamos uma queda generalizada nos preços para *" + missao.getTermoDaBusca() + "*.\n" +
                 "A média histórica era R$ " + missao.getMediaPrecoHistorico().setScale(2, RoundingMode.HALF_UP) + "\n" +
                 "A média de hoje caiu para *R$ " + precoMedioAtual.setScale(2, RoundingMode.HALF_UP) + "*!\n\n" +
-                "Acesse a Kabum e confira as ofertas na vitrine.";
+                "Acesse o Mercado Livre e confira as ofertas na vitrine.";
     }
 
-    private void disparar(String numero, String texto) {
+    private void disparar(String numeroOriginal, String texto) {
         try {
+            String chatIdFormatado = formatarNumeroParaChatId(numeroOriginal);
+
             WhatsAppMessageRequestDTO payload = WhatsAppMessageRequestDTO.builder()
-                    .number(numero)
-                    .text(texto)
+                    .chatId(chatIdFormatado)
+                    .message(texto)
                     .build();
 
-            whatsAppClient.enviarMensagem(apiKey, payload);
-            log.info("Notificação enviada com sucesso para o número: {}", numero);
+            whatsAppClient.enviarMensagem(idInstance, apiTokenInstance, payload);
+            log.info("Notificação enviada com sucesso via Green API para o chatId: {}", chatIdFormatado);
+
         } catch (Exception e) {
-            log.error("Falha ao enviar notificação para o número {}: {}", numero, e.getMessage());
+            log.error("Falha crítica ao enviar notificação para o número {}: {}", numeroOriginal, e.getMessage());
         }
+    }
+
+    private String formatarNumeroParaChatId(String telefone) {
+        // 1. Remove qualquer caractere que não seja número (ex: parênteses, espaços, traços)
+        String apenasDigitos = telefone.replaceAll("\\D", "");
+
+        // 2. Se o número não começar com 55 (código do Brasil), nós adicionamos
+        if (!apenasDigitos.startsWith("55")) {
+            apenasDigitos = "55" + apenasDigitos;
+        }
+
+        // 3. Concatena com o sufixo obrigatório da Green API
+        return apenasDigitos + "@c.us";
     }
 }
