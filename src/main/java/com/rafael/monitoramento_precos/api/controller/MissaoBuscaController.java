@@ -84,7 +84,7 @@ public class MissaoBuscaController {
             JwtAuthenticationToken jwtToken) {
 
         missaoBuscaService.atualizarBlacklist(id, jwtToken.getUsuarioId(), requestDTO);
-        
+
         return ResponseEntity.noContent().build();
     }
 }

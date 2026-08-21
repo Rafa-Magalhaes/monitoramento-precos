@@ -3,6 +3,7 @@ package com.rafael.monitoramento_precos.api.controller;
 import com.rafael.monitoramento_precos.api.converter.UsuarioConverter;
 import com.rafael.monitoramento_precos.api.dto.request.UsuarioCreateRequestDTO;
 import com.rafael.monitoramento_precos.api.dto.request.UsuarioUpdateEmailRequestDTO;
+import com.rafael.monitoramento_precos.api.dto.request.UsuarioUpdateTelefoneRequestDTO;
 import com.rafael.monitoramento_precos.api.dto.response.UsuarioResponseDTO;
 import com.rafael.monitoramento_precos.domain.model.Usuario;
 import com.rafael.monitoramento_precos.domain.service.UsuarioService;
@@ -38,6 +39,16 @@ public class UsuarioController {
 
         usuarioService.atualizarEmail(jwtToken.getUsuarioId(), requestDTO);
 
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/telefone")
+    public ResponseEntity<Void> atualizarTelefone(
+            @Valid @RequestBody UsuarioUpdateTelefoneRequestDTO requestDTO,
+            JwtAuthenticationToken jwtToken) {
+
+        usuarioService.atualizarTelefone(jwtToken.getUsuarioId(), requestDTO);
+        
         return ResponseEntity.noContent().build();
     }
 }

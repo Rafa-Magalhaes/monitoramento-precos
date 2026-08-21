@@ -3,6 +3,7 @@ package com.rafael.monitoramento_precos.domain.service;
 import com.rafael.monitoramento_precos.api.converter.UsuarioConverter;
 import com.rafael.monitoramento_precos.api.dto.request.UsuarioCreateRequestDTO;
 import com.rafael.monitoramento_precos.api.dto.request.UsuarioUpdateEmailRequestDTO;
+import com.rafael.monitoramento_precos.api.dto.request.UsuarioUpdateTelefoneRequestDTO;
 import com.rafael.monitoramento_precos.domain.exception.ConflictException;
 import com.rafael.monitoramento_precos.domain.exception.ResourceNotFoundException;
 import com.rafael.monitoramento_precos.domain.model.Usuario;
@@ -12,6 +13,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +55,22 @@ public class UsuarioService {
         }
 
         usuario.setEmail(dto.getEmail());
+        usuarioRepository.save(usuario);
+    }
+
+    public void atualizarTelefone(UUID usuarioIdToken, UsuarioUpdateTelefoneRequestDTO dto) {
+        Usuario usuario = usuarioRepository.findById(usuarioIdToken)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
+
+        if (usuario.getTelefone().equals(dto.getTelefone())) {
+            return;
+        }
+
+        if (usuarioRepository.existsByTelefone(dto.getTelefone())) {
+            throw new ConflictException("Este número de WhatsApp já está vinculado a outra conta.");
+        }
+
+        usuario.setTelefone(dto.getTelefone());
         usuarioRepository.save(usuario);
     }
 }
