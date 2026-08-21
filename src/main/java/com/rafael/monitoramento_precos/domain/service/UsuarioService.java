@@ -81,7 +81,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
         missaoBuscaService.excluirTodasMissoes(usuarioIdToken);
-        
+
         usuarioRepository.delete(usuario);
     }
 }
