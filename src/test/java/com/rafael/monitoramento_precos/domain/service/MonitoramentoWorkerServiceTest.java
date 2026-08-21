@@ -73,9 +73,10 @@ class MonitoramentoWorkerServiceTest {
         // O produto mais barato salvo no histórico tem que ser o de 100.00
         Assertions.assertEquals(new BigDecimal("100.00"), missaoSalva.getHistoricoDePrecos().get(0).getPrecoMinimo());
 
-        // Verifica se o WhatsApp foi chamado com a média e o produto correto
+        // Verifica se o WhatsApp foi chamado com a média e o produto correto,
+        // e aceita nulo para a média antiga (pois a missão era nova no teste)
         Mockito.verify(notificacaoWhatsAppService)
-                .processarGatilhosENotificar(Mockito.eq(missao), Mockito.eq(p1), Mockito.eq(new BigDecimal("150.00")));
+                .processarGatilhosENotificar(Mockito.eq(missao), Mockito.eq(p1), Mockito.eq(new BigDecimal("150.00")), Mockito.nullable(BigDecimal.class));
     }
 
     @Test

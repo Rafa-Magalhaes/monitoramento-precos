@@ -31,7 +31,7 @@ public class NotificacaoWhatsAppService {
     @Value("${app.admin.telefone:+5511999999999}")
     private String telefoneAdmin;
 
-    public void processarGatilhosENotificar(MissaoBusca missao, ProdutoScrapedDTO produtoMaisBarato, BigDecimal precoMedioAtual) {
+    public void processarGatilhosENotificar(MissaoBusca missao, ProdutoScrapedDTO produtoMaisBarato, BigDecimal precoMedioAtual, BigDecimal mediaHistoricaAntiga) {
 
         Usuario usuario = usuarioRepository.findById(missao.getUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado para envio de notificação."));
@@ -39,16 +39,15 @@ public class NotificacaoWhatsAppService {
         if (produtoMaisBarato.getPreco().compareTo(missao.getPrecoAlvo()) <= 0) {
             boolean isRecorde = verificarRecordeHistorico(missao, produtoMaisBarato.getPreco());
             String mensagem = montarMensagemCenarioA(missao, produtoMaisBarato, isRecorde);
-
             disparar(usuario.getTelefone(), mensagem);
             return;
         }
 
-        if (missao.getMediaPrecoHistorico() != null && missao.getMediaPrecoHistorico().compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal limiteOportunidade = missao.getMediaPrecoHistorico().multiply(new BigDecimal("0.85"));
+        if (mediaHistoricaAntiga != null && mediaHistoricaAntiga.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal limiteOportunidade = mediaHistoricaAntiga.multiply(new BigDecimal("0.85"));
 
             if (precoMedioAtual.compareTo(limiteOportunidade) <= 0) {
-                String mensagem = montarMensagemCenarioB(missao, precoMedioAtual);
+                String mensagem = montarMensagemCenarioB(missao, precoMedioAtual, mediaHistoricaAntiga);
                 disparar(usuario.getTelefone(), mensagem);
             }
         }
@@ -80,10 +79,10 @@ public class NotificacaoWhatsAppService {
         return sb.toString();
     }
 
-    private String montarMensagemCenarioB(MissaoBusca missao, BigDecimal precoMedioAtual) {
+    private String montarMensagemCenarioB(MissaoBusca missao, BigDecimal precoMedioAtual, BigDecimal mediaHistoricaAntiga) {
         return "📉 *OPORTUNIDADE DE MERCADO!* 📉\n\n" +
                 "Notamos uma queda generalizada nos preços para *" + missao.getTermoDaBusca() + "*.\n" +
-                "A média histórica era R$ " + missao.getMediaPrecoHistorico().setScale(2, RoundingMode.HALF_UP) + "\n" +
+                "A média histórica era R$ " + mediaHistoricaAntiga.setScale(2, RoundingMode.HALF_UP) + "\n" +
                 "A média de hoje caiu para *R$ " + precoMedioAtual.setScale(2, RoundingMode.HALF_UP) + "*!\n\n" +
                 "Acesse o Mercado Livre e confira as ofertas na vitrine.";
     }

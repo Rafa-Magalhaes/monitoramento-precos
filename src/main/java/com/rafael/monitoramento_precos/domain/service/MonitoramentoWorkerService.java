@@ -47,7 +47,7 @@ public class MonitoramentoWorkerService {
         int totalProdutosEncontradosNaRodada = 0;
 
         while (!fila.isEmpty()) {
-            MissaoNaFila itemAtual = fila.poll(); // Tira o primeiro da fila
+            MissaoNaFila itemAtual = fila.poll();
             MissaoBusca missao = itemAtual.missao();
             int tentativa = itemAtual.tentativaAtual();
 
@@ -112,6 +112,8 @@ public class MonitoramentoWorkerService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .divide(BigDecimal.valueOf(produtos.size()), 2, RoundingMode.HALF_UP);
 
+        BigDecimal mediaAntiga = missao.getMediaPrecoHistorico();
+
         HistoricoPreco fotoDoDia = HistoricoPreco.builder()
                 .precoMinimo(produtoMaisBarato.getPreco())
                 .precoMedio(precoMedio)
@@ -127,7 +129,7 @@ public class MonitoramentoWorkerService {
         log.info("Histórico salvo para '{}' | Mínimo: R${} | Médio: R${}",
                 missao.getTermoDaBusca(), produtoMaisBarato.getPreco(), precoMedio);
 
-        notificacaoWhatsAppService.processarGatilhosENotificar(missao, produtoMaisBarato, precoMedio);
+        notificacaoWhatsAppService.processarGatilhosENotificar(missao, produtoMaisBarato, precoMedio, mediaAntiga);
     }
 
     private void verificarHealthCheck(int qtdMissoes, int totalProdutosEncontrados) {

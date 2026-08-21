@@ -70,7 +70,8 @@ class NotificacaoWhatsAppServiceTest {
                 .thenReturn(new WhatsAppClient.CheckResponse(true));
 
         // Ação (Act)
-        notificacaoWhatsAppService.processarGatilhosENotificar(missao, produto, new BigDecimal("1800.00"));
+        // O último parâmetro (1600.00) simula qual era a média ontem
+        notificacaoWhatsAppService.processarGatilhosENotificar(missao, produto, new BigDecimal("1800.00"), new BigDecimal("1600.00"));
 
         // Verificação (Assert)
         ArgumentCaptor<WhatsAppMessageRequestDTO> captor = ArgumentCaptor.forClass(WhatsAppMessageRequestDTO.class);
@@ -83,6 +84,47 @@ class NotificacaoWhatsAppServiceTest {
         Assertions.assertEquals("5581999999999@c.us", payload.getChatId());
         Assertions.assertTrue(payload.getMessage().contains("RECORDE HISTÓRICO DE PREÇO BAIXO!"));
         Assertions.assertTrue(payload.getMessage().contains("R$ 1400.00"));
+    }
+
+    @Test
+    void processarGatilhos_DeveEnviarCenarioB_QuandoPrecoMedioCair15Porcento() {
+        // Cenário (Arrange)
+        UUID usuarioId = UUID.randomUUID();
+        Usuario usuario = Usuario.builder().telefone("81 99999-9999").build();
+
+        // Média antiga era 2000. Para cair 15%, o novo preço médio deve ser <= 1700.
+        BigDecimal mediaAntiga = new BigDecimal("2000.00");
+        BigDecimal precoMedioDeHoje = new BigDecimal("1600.00"); // Caiu 20%, o gatilho DEVE disparar!
+
+        MissaoBusca missao = MissaoBusca.builder()
+                .usuarioId(usuarioId)
+                .termoDaBusca("Monitor Ultrawide")
+                .precoAlvo(new BigDecimal("1000.00")) // O alvo não foi atingido
+                .build();
+
+        ProdutoScrapedDTO produto = ProdutoScrapedDTO.builder()
+                .preco(new BigDecimal("1500.00")) // Produto mais barato do dia (ainda acima do alvo)
+                .linkProduto("http://link-do-monitor.com")
+                .build();
+
+        Mockito.when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        Mockito.when(whatsAppClient.checkWhatsapp(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+                .thenReturn(new WhatsAppClient.CheckResponse(true));
+
+        // Ação (Act)
+        notificacaoWhatsAppService.processarGatilhosENotificar(missao, produto, precoMedioDeHoje, mediaAntiga);
+
+        // Verificação (Assert)
+        ArgumentCaptor<WhatsAppMessageRequestDTO> captor = ArgumentCaptor.forClass(WhatsAppMessageRequestDTO.class);
+        Mockito.verify(whatsAppClient, Mockito.times(1))
+                .enviarMensagem(Mockito.eq("testeId"), Mockito.eq("testeToken"), captor.capture());
+
+        WhatsAppMessageRequestDTO payload = captor.getValue();
+
+        // Verifica se a mensagem de oportunidade foi montada corretamente
+        Assertions.assertTrue(payload.getMessage().contains("OPORTUNIDADE DE MERCADO!"));
+        Assertions.assertTrue(payload.getMessage().contains("R$ 1600.00")); // Valida se inseriu o preço novo
+        Assertions.assertTrue(payload.getMessage().contains("R$ 2000.00")); // Valida se inseriu o preço antigo
     }
 
     @Test
