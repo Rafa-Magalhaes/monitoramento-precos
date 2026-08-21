@@ -13,8 +13,9 @@ public interface MissaoBuscaRepository extends MongoRepository<MissaoBusca, Stri
 
     List<MissaoBusca> findByUsuarioId(UUID usuarioId);
 
+    void deleteByUsuarioId(UUID usuarioId);
+
     List<MissaoBusca> findByAtivoTrue();
 
     List<MissaoBusca> findByAtivoTrueAndDataExpiracaoBefore(LocalDateTime dataAtual);
-
 }

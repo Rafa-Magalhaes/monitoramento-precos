@@ -2,6 +2,8 @@ package com.rafael.monitoramento_precos.api.controller;
 
 import com.rafael.monitoramento_precos.api.converter.MissaoBuscaConverter;
 import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaCreateRequestDTO;
+import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaUpdateBlacklistRequestDTO;
+import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaUpdateTermoRequestDTO;
 import com.rafael.monitoramento_precos.api.dto.response.MissaoBuscaResponseDTO;
 import com.rafael.monitoramento_precos.domain.model.MissaoBusca;
 import com.rafael.monitoramento_precos.domain.service.MissaoBuscaService;
@@ -43,5 +45,46 @@ public class MissaoBuscaController {
                 .toList();
 
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(
+            @PathVariable String id,
+            JwtAuthenticationToken jwtToken) {
+
+        missaoBuscaService.excluirMissao(id, jwtToken.getUsuarioId());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> excluirTodas(JwtAuthenticationToken jwtToken) {
+
+        missaoBuscaService.excluirTodasMissoes(jwtToken.getUsuarioId());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/termo")
+    public ResponseEntity<MissaoBuscaResponseDTO> atualizarTermo(
+            @PathVariable String id,
+            @Valid @RequestBody MissaoBuscaUpdateTermoRequestDTO requestDTO,
+            JwtAuthenticationToken jwtToken) {
+
+        MissaoBusca missaoAtualizada = missaoBuscaService.atualizarTermoBusca(id, jwtToken.getUsuarioId(), requestDTO);
+        MissaoBuscaResponseDTO responseDTO = missaoBuscaConverter.toResponseDTO(missaoAtualizada);
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @PatchMapping("/{id}/blacklist")
+    public ResponseEntity<Void> atualizarBlacklist(
+            @PathVariable String id,
+            @RequestBody MissaoBuscaUpdateBlacklistRequestDTO requestDTO,
+            JwtAuthenticationToken jwtToken) {
+
+        missaoBuscaService.atualizarBlacklist(id, jwtToken.getUsuarioId(), requestDTO);
+
+        return ResponseEntity.noContent().build();
     }
 }

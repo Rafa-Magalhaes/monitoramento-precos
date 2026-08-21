@@ -2,9 +2,12 @@ package com.rafael.monitoramento_precos.api.controller;
 
 import com.rafael.monitoramento_precos.api.converter.UsuarioConverter;
 import com.rafael.monitoramento_precos.api.dto.request.UsuarioCreateRequestDTO;
+import com.rafael.monitoramento_precos.api.dto.request.UsuarioUpdateEmailRequestDTO;
+import com.rafael.monitoramento_precos.api.dto.request.UsuarioUpdateTelefoneRequestDTO;
 import com.rafael.monitoramento_precos.api.dto.response.UsuarioResponseDTO;
 import com.rafael.monitoramento_precos.domain.model.Usuario;
 import com.rafael.monitoramento_precos.domain.service.UsuarioService;
+import com.rafael.monitoramento_precos.infrastructure.security.JwtAuthenticationToken;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,5 +30,33 @@ public class UsuarioController {
         UsuarioResponseDTO responseDTO = usuarioConverter.toResponseDTO(usuarioSalvo);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+    }
+
+    @PatchMapping("/me/email")
+    public ResponseEntity<Void> atualizarEmail(
+            @Valid @RequestBody UsuarioUpdateEmailRequestDTO requestDTO,
+            JwtAuthenticationToken jwtToken) {
+
+        usuarioService.atualizarEmail(jwtToken.getUsuarioId(), requestDTO);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/telefone")
+    public ResponseEntity<Void> atualizarTelefone(
+            @Valid @RequestBody UsuarioUpdateTelefoneRequestDTO requestDTO,
+            JwtAuthenticationToken jwtToken) {
+
+        usuarioService.atualizarTelefone(jwtToken.getUsuarioId(), requestDTO);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> excluirConta(JwtAuthenticationToken jwtToken) {
+
+        usuarioService.excluirConta(jwtToken.getUsuarioId());
+
+        return ResponseEntity.noContent().build();
     }
 }
