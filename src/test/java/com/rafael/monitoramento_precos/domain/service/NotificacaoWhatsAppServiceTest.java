@@ -65,6 +65,10 @@ class NotificacaoWhatsAppServiceTest {
 
         Mockito.when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
 
+        // NOVO MOCK: Ensina o ator a responder que o número EXISTE para passar pela barreira Anti-Spam
+        Mockito.when(whatsAppClient.checkWhatsapp(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+                .thenReturn(new WhatsAppClient.CheckResponse(true));
+
         // Ação (Act)
         notificacaoWhatsAppService.processarGatilhosENotificar(missao, produto, new BigDecimal("1800.00"));
 
@@ -75,16 +79,18 @@ class NotificacaoWhatsAppServiceTest {
 
         WhatsAppMessageRequestDTO payload = captor.getValue();
 
-        // Verifica se o Regex limpou o telefone e colocou o DDI do Brasil + sufixo @c.us
+        // Verifica se formatou o DDI e adicionou o sufixo @c.us
         Assertions.assertEquals("5581999999999@c.us", payload.getChatId());
-
-        // Verifica se a mensagem montou a flag de Recorde
         Assertions.assertTrue(payload.getMessage().contains("RECORDE HISTÓRICO DE PREÇO BAIXO!"));
         Assertions.assertTrue(payload.getMessage().contains("R$ 1400.00"));
     }
 
     @Test
     void notificarHealthCheckAdmin_DeveEnviarMensagemParaOAdministrador() {
+        // NOVO MOCK: Ensina o ator a responder que o número EXISTE
+        Mockito.when(whatsAppClient.checkWhatsapp(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+                .thenReturn(new WhatsAppClient.CheckResponse(true));
+
         // Ação (Act)
         notificacaoWhatsAppService.notificarHealthCheckAdmin();
 
@@ -96,5 +102,23 @@ class NotificacaoWhatsAppServiceTest {
         WhatsAppMessageRequestDTO payload = captor.getValue();
         Assertions.assertEquals("5511999999999@c.us", payload.getChatId());
         Assertions.assertTrue(payload.getMessage().contains("ALERTA CRÍTICO"));
+    }
+
+    @Test
+    void alternarNonoDigito_DeveAdicionarOuRemoverO9DigitoCorretamente() {
+        // Cenário 1: Número com 13 dígitos (Possui o 9). O sistema DEVE remover.
+        String numeroCom9 = "5511999999999";
+        String resultadoSem9 = ReflectionTestUtils.invokeMethod(notificacaoWhatsAppService, "alternarNonoDigito", numeroCom9);
+        Assertions.assertEquals("551199999999", resultadoSem9);
+
+        // Cenário 2: Número com 12 dígitos (Não possui o 9). O sistema DEVE adicionar.
+        String numeroSem9 = "558199999999";
+        String resultadoCom9 = ReflectionTestUtils.invokeMethod(notificacaoWhatsAppService, "alternarNonoDigito", numeroSem9);
+        Assertions.assertEquals("5581999999999", resultadoCom9);
+
+        // Cenário 3: Número fora do padrão brasileiro (muito curto ou longo). O sistema DEVE ignorar e retornar null.
+        String numeroInvalido = "558199";
+        String resultadoNulo = ReflectionTestUtils.invokeMethod(notificacaoWhatsAppService, "alternarNonoDigito", numeroInvalido);
+        Assertions.assertNull(resultadoNulo);
     }
 }

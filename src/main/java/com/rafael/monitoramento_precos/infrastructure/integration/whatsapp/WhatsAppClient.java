@@ -16,4 +16,15 @@ public interface WhatsAppClient {
             @PathVariable("apiTokenInstance") String apiTokenInstance,
             @RequestBody WhatsAppMessageRequestDTO request
     );
+
+    // ENDPOINT DE VALIDAÇÃO ANTI-SPAM ---
+    @PostMapping("/waInstance{idInstance}/checkWhatsapp/{apiTokenInstance}")
+    CheckResponse checkWhatsapp(
+            @PathVariable("idInstance") String idInstance,
+            @PathVariable("apiTokenInstance") String apiTokenInstance,
+            @RequestBody CheckRequest request
+    );
+
+    record CheckRequest(Long phoneNumber) {}
+    record CheckResponse(boolean existsWhatsapp) {}
 }

@@ -89,32 +89,61 @@ public class NotificacaoWhatsAppService {
     }
 
     private void disparar(String numeroOriginal, String texto) {
-        try {
-            String chatIdFormatado = formatarNumeroParaChatId(numeroOriginal);
+        String numeroLimpo = numeroOriginal.replaceAll("\\D", "");
+        if (!numeroLimpo.startsWith("55")) {
+            numeroLimpo = "55" + numeroLimpo;
+        }
 
+        boolean existe = numeroExisteNoWhatsApp(numeroLimpo);
+        String numeroValidado = numeroLimpo;
+
+        if (!existe) {
+            log.warn("Número {} não encontrado na base do WhatsApp. Aplicando Fallback do 9º dígito...", numeroLimpo);
+            String numeroMutante = alternarNonoDigito(numeroLimpo);
+
+            if (numeroMutante != null && numeroExisteNoWhatsApp(numeroMutante)) {
+                numeroValidado = numeroMutante;
+                log.info("Fallback bem sucedido! O JID real na Meta é: {}", numeroValidado);
+            } else {
+                log.error("Abordagem abortada para evitar bloqueio de SPAM. Nenhuma variação do número existe: {}", numeroOriginal);
+                return; // Morre aqui. Protegemos nossa API de banimento!
+            }
+        }
+
+        try {
+            String chatIdFinal = numeroValidado + "@c.us";
             WhatsAppMessageRequestDTO payload = WhatsAppMessageRequestDTO.builder()
-                    .chatId(chatIdFormatado)
+                    .chatId(chatIdFinal)
                     .message(texto)
                     .build();
 
             whatsAppClient.enviarMensagem(idInstance, apiTokenInstance, payload);
-            log.info("Notificação enviada com sucesso via Green API para o chatId: {}", chatIdFormatado);
-
+            log.info("Notificação enviada com sucesso para o chatId: {}", chatIdFinal);
         } catch (Exception e) {
-            log.error("Falha crítica ao enviar notificação para o número {}: {}", numeroOriginal, e.getMessage());
+            log.error("Falha inesperada no servidor da Green API: {}", e.getMessage());
         }
     }
 
-    private String formatarNumeroParaChatId(String telefone) {
-        // 1. Remove qualquer caractere que não seja número (ex: parênteses, espaços, traços)
-        String apenasDigitos = telefone.replaceAll("\\D", "");
-
-        // 2. Se o número não começar com 55 (código do Brasil), nós adicionamos
-        if (!apenasDigitos.startsWith("55")) {
-            apenasDigitos = "55" + apenasDigitos;
+    private boolean numeroExisteNoWhatsApp(String numeroSomenteDigitos) {
+        try {
+            WhatsAppClient.CheckRequest request = new WhatsAppClient.CheckRequest(Long.parseLong(numeroSomenteDigitos));
+            WhatsAppClient.CheckResponse response = whatsAppClient.checkWhatsapp(idInstance, apiTokenInstance, request);
+            return response.existsWhatsapp();
+        } catch (Exception e) {
+            log.warn("Falha ao consultar validade do número na Green API: {}", e.getMessage());
+            return false;
         }
+    }
 
-        // 3. Concatena com o sufixo obrigatório da Green API
-        return apenasDigitos + "@c.us";
+    private String alternarNonoDigito(String numero) {
+        // Se tem 13 dígitos (55 + DDD + 9 números), retiramos o 9
+        if (numero.length() == 13) {
+            return numero.substring(0, 4) + numero.substring(5);
+        }
+        // Se tem 12 dígitos (55 + DDD + 8 números), adicionamos o 9 após o DDD
+        else if (numero.length() == 12) {
+            return numero.substring(0, 4) + "9" + numero.substring(4);
+        }
+        return null;
     }
 }
