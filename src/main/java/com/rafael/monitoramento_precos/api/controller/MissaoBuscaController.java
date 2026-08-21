@@ -78,14 +78,13 @@ public class MissaoBuscaController {
     }
 
     @PatchMapping("/{id}/blacklist")
-    public ResponseEntity<MissaoBuscaResponseDTO> atualizarBlacklist(
+    public ResponseEntity<Void> atualizarBlacklist(
             @PathVariable String id,
             @RequestBody MissaoBuscaUpdateBlacklistRequestDTO requestDTO,
             JwtAuthenticationToken jwtToken) {
 
-        MissaoBusca missaoAtualizada = missaoBuscaService.atualizarBlacklist(id, jwtToken.getUsuarioId(), requestDTO);
-        MissaoBuscaResponseDTO responseDTO = missaoBuscaConverter.toResponseDTO(missaoAtualizada);
-
-        return ResponseEntity.ok(responseDTO);
+        missaoBuscaService.atualizarBlacklist(id, jwtToken.getUsuarioId(), requestDTO);
+        
+        return ResponseEntity.noContent().build();
     }
 }
