@@ -48,7 +48,15 @@ public class UsuarioController {
             JwtAuthenticationToken jwtToken) {
 
         usuarioService.atualizarTelefone(jwtToken.getUsuarioId(), requestDTO);
-        
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> excluirConta(JwtAuthenticationToken jwtToken) {
+
+        usuarioService.excluirConta(jwtToken.getUsuarioId());
+
         return ResponseEntity.noContent().build();
     }
 }

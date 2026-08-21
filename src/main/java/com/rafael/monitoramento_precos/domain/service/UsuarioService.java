@@ -21,6 +21,7 @@ import java.util.UUID;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final MissaoBuscaService missaoBuscaService;
     private final PasswordEncoder passwordEncoder;
     private final UsuarioConverter usuarioConverter;
 
@@ -72,5 +73,15 @@ public class UsuarioService {
 
         usuario.setTelefone(dto.getTelefone());
         usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public void excluirConta(UUID usuarioIdToken) {
+        Usuario usuario = usuarioRepository.findById(usuarioIdToken)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
+
+        missaoBuscaService.excluirTodasMissoes(usuarioIdToken);
+        
+        usuarioRepository.delete(usuario);
     }
 }
