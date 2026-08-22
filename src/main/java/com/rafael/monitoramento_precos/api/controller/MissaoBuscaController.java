@@ -47,6 +47,18 @@ public class MissaoBuscaController {
         return ResponseEntity.ok(response);
     }
 
+    // NOVO ENDPOINT: Buscar missão específica
+    @GetMapping("/{id}")
+    public ResponseEntity<MissaoBuscaResponseDTO> buscarPorId(
+            @PathVariable String id,
+            JwtAuthenticationToken jwtToken) {
+
+        MissaoBusca missao = missaoBuscaService.buscarPorId(id, jwtToken.getUsuarioId());
+        MissaoBuscaResponseDTO responseDTO = missaoBuscaConverter.toResponseDTO(missao);
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(
             @PathVariable String id,
@@ -65,16 +77,16 @@ public class MissaoBuscaController {
         return ResponseEntity.noContent().build();
     }
 
+    // REFATORAÇÃO: Agora retorna 204 No Content
     @PatchMapping("/{id}/termo")
-    public ResponseEntity<MissaoBuscaResponseDTO> atualizarTermo(
+    public ResponseEntity<Void> atualizarTermo(
             @PathVariable String id,
             @Valid @RequestBody MissaoBuscaUpdateTermoRequestDTO requestDTO,
             JwtAuthenticationToken jwtToken) {
 
-        MissaoBusca missaoAtualizada = missaoBuscaService.atualizarTermoBusca(id, jwtToken.getUsuarioId(), requestDTO);
-        MissaoBuscaResponseDTO responseDTO = missaoBuscaConverter.toResponseDTO(missaoAtualizada);
+        missaoBuscaService.atualizarTermoBusca(id, jwtToken.getUsuarioId(), requestDTO);
 
-        return ResponseEntity.ok(responseDTO);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/blacklist")

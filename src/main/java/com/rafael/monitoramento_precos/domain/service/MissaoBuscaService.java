@@ -42,6 +42,18 @@ public class MissaoBuscaService {
         return missaoBuscaRepository.findByUsuarioId(usuarioId);
     }
 
+    // NOVO MÉTODO: Busca uma missão específica garantindo que pertence ao usuário logado
+    public MissaoBusca buscarPorId(String missaoId, UUID usuarioIdToken) {
+        MissaoBusca missao = missaoBuscaRepository.findById(missaoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Missão de busca não encontrada."));
+
+        if (!missao.getUsuarioId().equals(usuarioIdToken)) {
+            throw new ConflictException("Acesso negado. Você não tem permissão para acessar esta missão.");
+        }
+
+        return missao;
+    }
+
     public void excluirMissao(String missaoId, UUID usuarioIdToken) {
         MissaoBusca missao = missaoBuscaRepository.findById(missaoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Missão de busca não encontrada."));
@@ -57,7 +69,7 @@ public class MissaoBuscaService {
         missaoBuscaRepository.deleteByUsuarioId(usuarioIdToken);
     }
 
-    public MissaoBusca atualizarTermoBusca(String missaoId, UUID usuarioIdToken, MissaoBuscaUpdateTermoRequestDTO dto) {
+    public void atualizarTermoBusca(String missaoId, UUID usuarioIdToken, MissaoBuscaUpdateTermoRequestDTO dto) {
         MissaoBusca missao = missaoBuscaRepository.findById(missaoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Missão de busca não encontrada."));
 
@@ -66,7 +78,7 @@ public class MissaoBuscaService {
         }
 
         boolean jaMonitoraEsseTermo = missaoBuscaRepository.findByUsuarioId(usuarioIdToken).stream()
-                .anyMatch(m -> !m.getId().equals(missaoId) // Garante que não é a própria missão atual
+                .anyMatch(m -> !m.getId().equals(missaoId)
                         && m.getTermoDaBusca().equalsIgnoreCase(dto.getTermoDaBusca())
                         && m.getAtivo());
 
@@ -77,10 +89,10 @@ public class MissaoBuscaService {
         missao.setTermoDaBusca(dto.getTermoDaBusca());
         missao.setPalavrasChaveExigidas(missaoBuscaConverter.extrairPalavrasChave(dto.getTermoDaBusca()));
 
-        return missaoBuscaRepository.save(missao);
+        missaoBuscaRepository.save(missao);
     }
 
-    public MissaoBusca atualizarBlacklist(String missaoId, UUID usuarioIdToken, MissaoBuscaUpdateBlacklistRequestDTO dto) {
+    public void atualizarBlacklist(String missaoId, UUID usuarioIdToken, MissaoBuscaUpdateBlacklistRequestDTO dto) {
         MissaoBusca missao = missaoBuscaRepository.findById(missaoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Missão de busca não encontrada."));
 
@@ -92,6 +104,6 @@ public class MissaoBuscaService {
 
         missao.setPalavrasChaveProibidas(novaBlacklist);
 
-        return missaoBuscaRepository.save(missao);
+        missaoBuscaRepository.save(missao);
     }
 }
