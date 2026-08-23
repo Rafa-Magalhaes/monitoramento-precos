@@ -65,12 +65,10 @@ class NotificacaoWhatsAppServiceTest {
 
         Mockito.when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
 
-        // NOVO MOCK: Ensina o ator a responder que o número EXISTE para passar pela barreira Anti-Spam
         Mockito.when(whatsAppClient.checkWhatsapp(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
                 .thenReturn(new WhatsAppClient.CheckResponse(true));
 
         // Ação (Act)
-        // O último parâmetro (1600.00) simula qual era a média ontem
         notificacaoWhatsAppService.processarGatilhosENotificar(missao, produto, new BigDecimal("1800.00"), new BigDecimal("1600.00"));
 
         // Verificação (Assert)
@@ -80,10 +78,10 @@ class NotificacaoWhatsAppServiceTest {
 
         WhatsAppMessageRequestDTO payload = captor.getValue();
 
-        // Verifica se formatou o DDI e adicionou o sufixo @c.us
         Assertions.assertEquals("5581999999999@c.us", payload.getChatId());
-        Assertions.assertTrue(payload.getMessage().contains("RECORDE HISTÓRICO DE PREÇO BAIXO!"));
-        Assertions.assertTrue(payload.getMessage().contains("R$ 1400.00"));
+        // PROVA MATEMÁTICA: Agora procuramos o texto em minúsculo e sem formatações exageradas
+        Assertions.assertTrue(payload.getMessage().toLowerCase().contains("recorde"));
+        Assertions.assertTrue(payload.getMessage().contains("1400.00"));
     }
 
     @Test
@@ -92,18 +90,17 @@ class NotificacaoWhatsAppServiceTest {
         UUID usuarioId = UUID.randomUUID();
         Usuario usuario = Usuario.builder().telefone("81 99999-9999").build();
 
-        // Média antiga era 2000. Para cair 15%, o novo preço médio deve ser <= 1700.
         BigDecimal mediaAntiga = new BigDecimal("2000.00");
-        BigDecimal precoMedioDeHoje = new BigDecimal("1600.00"); // Caiu 20%, o gatilho DEVE disparar!
+        BigDecimal precoMedioDeHoje = new BigDecimal("1600.00");
 
         MissaoBusca missao = MissaoBusca.builder()
                 .usuarioId(usuarioId)
                 .termoDaBusca("Monitor Ultrawide")
-                .precoAlvo(new BigDecimal("1000.00")) // O alvo não foi atingido
+                .precoAlvo(new BigDecimal("1000.00"))
                 .build();
 
         ProdutoScrapedDTO produto = ProdutoScrapedDTO.builder()
-                .preco(new BigDecimal("1500.00")) // Produto mais barato do dia (ainda acima do alvo)
+                .preco(new BigDecimal("1500.00"))
                 .linkProduto("http://link-do-monitor.com")
                 .build();
 
@@ -121,15 +118,14 @@ class NotificacaoWhatsAppServiceTest {
 
         WhatsAppMessageRequestDTO payload = captor.getValue();
 
-        // Verifica se a mensagem de oportunidade foi montada corretamente
-        Assertions.assertTrue(payload.getMessage().contains("OPORTUNIDADE DE MERCADO!"));
-        Assertions.assertTrue(payload.getMessage().contains("R$ 1600.00")); // Valida se inseriu o preço novo
-        Assertions.assertTrue(payload.getMessage().contains("R$ 2000.00")); // Valida se inseriu o preço antigo
+        // PROVA MATEMÁTICA: Valida a nova estrutura do texto (suave)
+        Assertions.assertTrue(payload.getMessage().toLowerCase().contains("oportunidade"));
+        Assertions.assertTrue(payload.getMessage().contains("1600.00"));
+        Assertions.assertTrue(payload.getMessage().contains("2000.00"));
     }
 
     @Test
     void notificarHealthCheckAdmin_DeveEnviarMensagemParaOAdministrador() {
-        // NOVO MOCK: Ensina o ator a responder que o número EXISTE
         Mockito.when(whatsAppClient.checkWhatsapp(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
                 .thenReturn(new WhatsAppClient.CheckResponse(true));
 
@@ -143,22 +139,21 @@ class NotificacaoWhatsAppServiceTest {
 
         WhatsAppMessageRequestDTO payload = captor.getValue();
         Assertions.assertEquals("5511999999999@c.us", payload.getChatId());
-        Assertions.assertTrue(payload.getMessage().contains("ALERTA CRÍTICO"));
+        // PROVA MATEMÁTICA: Busca o novo texto padrão de alarme sem caixa alta
+        Assertions.assertTrue(payload.getMessage().toLowerCase().contains("aviso do sistema"));
     }
 
     @Test
     void alternarNonoDigito_DeveAdicionarOuRemoverO9DigitoCorretamente() {
-        // Cenário 1: Número com 13 dígitos (Possui o 9). O sistema DEVE remover.
+        // Teste inalterado
         String numeroCom9 = "5511999999999";
         String resultadoSem9 = ReflectionTestUtils.invokeMethod(notificacaoWhatsAppService, "alternarNonoDigito", numeroCom9);
         Assertions.assertEquals("551199999999", resultadoSem9);
 
-        // Cenário 2: Número com 12 dígitos (Não possui o 9). O sistema DEVE adicionar.
         String numeroSem9 = "558199999999";
         String resultadoCom9 = ReflectionTestUtils.invokeMethod(notificacaoWhatsAppService, "alternarNonoDigito", numeroSem9);
         Assertions.assertEquals("5581999999999", resultadoCom9);
 
-        // Cenário 3: Número fora do padrão brasileiro (muito curto ou longo). O sistema DEVE ignorar e retornar null.
         String numeroInvalido = "558199";
         String resultadoNulo = ReflectionTestUtils.invokeMethod(notificacaoWhatsAppService, "alternarNonoDigito", numeroInvalido);
         Assertions.assertNull(resultadoNulo);
