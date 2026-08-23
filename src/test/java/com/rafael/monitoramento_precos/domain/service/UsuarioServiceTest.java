@@ -33,6 +33,9 @@ class UsuarioServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private UsuarioConverter usuarioConverter;
+    // NOVA INJEÇÃO: Mocado para os testes não tentarem enviar mensagens reais!
+    @Mock
+    private NotificacaoWhatsAppService notificacaoWhatsAppService;
 
     @BeforeEach
     void setUp() {
@@ -51,10 +54,12 @@ class UsuarioServiceTest {
 
         // Garante que o repositório NUNCA tentou salvar o usuário
         Mockito.verify(usuarioRepository, Mockito.never()).save(Mockito.any());
+        // Garante que não manda WhatsApp se falhar
+        Mockito.verify(notificacaoWhatsAppService, Mockito.never()).enviarBoasVindas(Mockito.any());
     }
 
     @Test
-    void criarUsuario_DeveHigienizarEmailAntesDeChecarDuplicidade() {
+    void criarUsuario_DeveHigienizarEmail_E_EnviarBoasVindas() {
         // Cenário (Arrange)
         UsuarioCreateRequestDTO dto = UsuarioCreateRequestDTO.builder()
                 .nome(" Babi ")
@@ -74,8 +79,10 @@ class UsuarioServiceTest {
         // Ação (Act)
         usuarioService.criarUsuario(dto);
 
-        // Verificação (Assert): Prova que a busca pela duplicidade usou letras minúsculas
+        // Verificação (Assert): Prova matemática das lógicas de negócio
         Mockito.verify(usuarioRepository, Mockito.times(1)).findByEmail("teste@teste.com");
+        // PROVA MATEMÁTICA: O método de envio do novo WhatsApp FOI chamado 1 vez
+        Mockito.verify(notificacaoWhatsAppService, Mockito.times(1)).enviarBoasVindas(Mockito.any(Usuario.class));
     }
 
     @Test
