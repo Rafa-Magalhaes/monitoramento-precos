@@ -22,8 +22,9 @@ public class AuthService {
     private String pepper;
 
     public LoginResponseDTO autenticar(LoginRequestDTO dto) {
+        String emailTratado = dto.getEmail().toLowerCase().trim();
 
-        Usuario usuario = usuarioRepository.findByEmail(dto.getEmail())
+        Usuario usuario = usuarioRepository.findByEmail(emailTratado)
                 .orElseThrow(() -> new BadCredentialsException("E-mail ou senha inválidos."));
 
         String senhaComPepper = dto.getSenha() + pepper;
