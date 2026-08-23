@@ -54,7 +54,7 @@ public class NotificacaoWhatsAppService {
     }
 
     public void notificarHealthCheckAdmin() {
-        String mensagem = "🚨 ALERTA CRÍTICO: O Motor de Scraping retornou 0 resultados. Possível alteração de layout ou IP bloqueado!";
+        String mensagem = "Aviso do sistema: O motor de scraping retornou 0 resultados. Possível alteração de layout ou IP bloqueado na loja.";
         disparar(telefoneAdmin, mensagem);
     }
 
@@ -68,22 +68,22 @@ public class NotificacaoWhatsAppService {
     private String montarMensagemCenarioA(MissaoBusca missao, ProdutoScrapedDTO produto, boolean isRecorde) {
         StringBuilder sb = new StringBuilder();
         if (isRecorde) {
-            sb.append("🚨 *RECORDE HISTÓRICO DE PREÇO BAIXO!* 🚨\n\n");
+            sb.append("Aviso de recorde de preço baixo!\n\n");
         } else {
-            sb.append("🎯 *ALVO ATINGIDO!* 🎯\n\n");
+            sb.append("Aviso: alvo atingido!\n\n");
         }
-        sb.append("O item *").append(missao.getTermoDaBusca()).append("* atingiu a sua meta!\n")
-                .append("Preço Encontrado: *R$ ").append(produto.getPreco()).append("*\n\n")
-                .append("🔗 Compre agora antes que acabe:\n")
+        sb.append("O item '").append(missao.getTermoDaBusca()).append("' atingiu a sua meta.\n")
+                .append("Preço encontrado: R$ ").append(produto.getPreco()).append("\n\n")
+                .append("Link para compra:\n")
                 .append(produto.getLinkProduto());
         return sb.toString();
     }
 
     private String montarMensagemCenarioB(MissaoBusca missao, BigDecimal precoMedioAtual, BigDecimal mediaHistoricaAntiga) {
-        return "📉 *OPORTUNIDADE DE MERCADO!* 📉\n\n" +
-                "Notamos uma queda generalizada nos preços para *" + missao.getTermoDaBusca() + "*.\n" +
+        return "Oportunidade de mercado identificada.\n\n" +
+                "Notamos uma queda generalizada nos preços para '" + missao.getTermoDaBusca() + "'.\n" +
                 "A média histórica era R$ " + mediaHistoricaAntiga.setScale(2, RoundingMode.HALF_UP) + "\n" +
-                "A média de hoje caiu para *R$ " + precoMedioAtual.setScale(2, RoundingMode.HALF_UP) + "*!\n\n" +
+                "A média de hoje caiu para R$ " + precoMedioAtual.setScale(2, RoundingMode.HALF_UP) + ".\n\n" +
                 "Acesse o Mercado Livre e confira as ofertas na vitrine.";
     }
 
@@ -145,4 +145,11 @@ public class NotificacaoWhatsAppService {
         }
         return null;
     }
+
+    public void enviarBoasVindas(Usuario usuario) {
+        String mensagem = "Olá, " + usuario.getNome() + "! Sua conta no Monitoramento Inteligente foi ativada com sucesso. Em breve, você receberá alertas de ofertas diretamente por aqui. Boas compras!";
+        disparar(usuario.getTelefone(), mensagem);
+    }
+
+
 }
