@@ -1,6 +1,5 @@
-package com.rafael.monitoramento_precos.domain.converter;
+package com.rafael.monitoramento_precos.api.converter;
 
-import com.rafael.monitoramento_precos.api.converter.MissaoBuscaConverter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
