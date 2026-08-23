@@ -11,8 +11,8 @@ public class UsuarioConverter {
 
     public Usuario toEntity(UsuarioCreateRequestDTO dto, String senhaHash) {
         return Usuario.builder()
-                .nome(dto.getNome())
-                .email(dto.getEmail())
+                .nome(dto.getNome().trim())
+                .email(dto.getEmail().toLowerCase().trim())
                 .senha(senhaHash)
                 .telefone(dto.getTelefone())
                 .role(Role.ROLE_USER)
