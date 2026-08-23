@@ -31,7 +31,9 @@ public class UsuarioService {
     @Transactional
     public Usuario criarUsuario(UsuarioCreateRequestDTO dto) {
 
-        if (usuarioRepository.findByEmail(dto.getEmail()).isPresent()) {
+        String emailTratado = dto.getEmail().toLowerCase().trim();
+
+        if (usuarioRepository.findByEmail(emailTratado).isPresent()) {
             throw new ConflictException("Já existe um usuário cadastrado com este e-mail.");
         }
 
@@ -47,15 +49,17 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(usuarioIdToken)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
-        if (usuario.getEmail().equalsIgnoreCase(dto.getEmail())) {
+        String emailTratado = dto.getEmail().toLowerCase().trim();
+
+        if (usuario.getEmail().equals(emailTratado)) {
             return;
         }
 
-        if (usuarioRepository.existsByEmail(dto.getEmail())) {
+        if (usuarioRepository.existsByEmail(emailTratado)) {
             throw new ConflictException("Este e-mail já está sendo utilizado por outra conta.");
         }
 
-        usuario.setEmail(dto.getEmail());
+        usuario.setEmail(emailTratado);
         usuarioRepository.save(usuario);
     }
 

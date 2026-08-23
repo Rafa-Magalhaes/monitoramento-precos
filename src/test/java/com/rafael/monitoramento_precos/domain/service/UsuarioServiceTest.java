@@ -54,6 +54,31 @@ class UsuarioServiceTest {
     }
 
     @Test
+    void criarUsuario_DeveHigienizarEmailAntesDeChecarDuplicidade() {
+        // Cenário (Arrange)
+        UsuarioCreateRequestDTO dto = UsuarioCreateRequestDTO.builder()
+                .nome(" Babi ")
+                .email("   TESTE@TESTE.COM ")
+                .senha("senha123")
+                .telefone("81999999999")
+                .build();
+
+        Usuario usuarioMock = Usuario.builder().email("teste@teste.com").build();
+
+        // Ensinamos o repositório a aceitar APENAS a versão limpa
+        Mockito.when(usuarioRepository.findByEmail("teste@teste.com")).thenReturn(Optional.empty());
+        Mockito.when(passwordEncoder.encode(Mockito.anyString())).thenReturn("senhaHash");
+        Mockito.when(usuarioConverter.toEntity(Mockito.eq(dto), Mockito.anyString())).thenReturn(usuarioMock);
+        Mockito.when(usuarioRepository.save(Mockito.any())).thenReturn(usuarioMock);
+
+        // Ação (Act)
+        usuarioService.criarUsuario(dto);
+
+        // Verificação (Assert): Prova que a busca pela duplicidade usou letras minúsculas
+        Mockito.verify(usuarioRepository, Mockito.times(1)).findByEmail("teste@teste.com");
+    }
+
+    @Test
     void excluirConta_DeveOrquestrarExclusaoEmCascata() {
         UUID usuarioId = UUID.randomUUID();
         Usuario usuarioMock = Usuario.builder().id(usuarioId).build();
