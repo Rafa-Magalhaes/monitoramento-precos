@@ -44,7 +44,8 @@ public class MonitoramentoWorkerService {
         Queue<MissaoNaFila> fila = new LinkedList<>();
         missoesAtivas.forEach(missao -> fila.add(new MissaoNaFila(missao, 1)));
 
-        int totalProdutosEncontradosNaRodada = 0;
+        int totalMissoes = missoesAtivas.size();
+        int missoesZeradas = 0;
 
         while (!fila.isEmpty()) {
             MissaoNaFila itemAtual = fila.poll();
@@ -57,8 +58,8 @@ public class MonitoramentoWorkerService {
 
                 if (produtos.isEmpty()) {
                     log.warn("Nenhum produto válido encontrado para a missão: {}", missao.getTermoDaBusca());
+                    missoesZeradas++;
                 } else {
-                    totalProdutosEncontradosNaRodada += produtos.size();
                     processarESalvarHistorico(missao, produtos);
                 }
 
@@ -69,9 +70,7 @@ public class MonitoramentoWorkerService {
 
                 if (tentativa < 3) {
                     log.warn("Enviando missão [{}] para o FINAL da fila de reprocessamento...", missao.getTermoDaBusca());
-
                     fila.add(new MissaoNaFila(missao, tentativa + 1));
-
                     try { Thread.sleep(5000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
                 } else {
                     log.error("🚨 Missão [{}] ABORTADA após 3 tentativas falhas. O Proxy não conseguiu resolver.", missao.getTermoDaBusca());
@@ -79,7 +78,7 @@ public class MonitoramentoWorkerService {
             }
         }
 
-        verificarHealthCheck(missoesAtivas.size(), totalProdutosEncontradosNaRodada);
+        verificarHealthCheck(totalMissoes, missoesZeradas);
     }
 
     @Scheduled(cron = "0 0 0 * * *") // Roda todo dia exatamente à 00:00 (Meia-noite)
@@ -132,12 +131,18 @@ public class MonitoramentoWorkerService {
         notificacaoWhatsAppService.processarGatilhosENotificar(missao, produtoMaisBarato, precoMedio, mediaAntiga);
     }
 
-    private void verificarHealthCheck(int qtdMissoes, int totalProdutosEncontrados) {
-        if (qtdMissoes > 0 && totalProdutosEncontrados == 0) {
+    private void verificarHealthCheck(int totalMissoes, int missoesZeradas) {
+        if (totalMissoes == 0) return;
+
+        double taxaFalha = (double) missoesZeradas / totalMissoes;
+
+        if (taxaFalha >= 0.30) {
             log.error("🚨 ALERTA CRÍTICO DE SISTEMA (HEALTH CHECK) 🚨");
-            log.error("O Motor de Scraping retornou 0 resultados para TODAS as missões.");
-            log.error("Isso indica bloqueio ou mudança no DOM do Mercado Livre.");
-            notificacaoWhatsAppService.notificarHealthCheckAdmin();
+            log.error("Taxa de falha atingiu {}% ({} de {} missões zeradas).",
+                    String.format("%.1f", taxaFalha * 100), missoesZeradas, totalMissoes);
+
+            String motivo = String.format("A taxa de falha atingiu %.1f%% (%d de %d missões zeradas). Possível Teste A/B no DOM.", taxaFalha * 100, missoesZeradas, totalMissoes);
+            notificacaoWhatsAppService.notificarHealthCheckAdmin(motivo);
         }
     }
 }
