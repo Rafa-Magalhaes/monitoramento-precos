@@ -61,10 +61,8 @@ public class NotificacaoWhatsAppService {
         }
     }
 
-    public void notificarHealthCheckAdmin() {
-        dispararTemplate(telefoneAdmin, "alerta_health_check", List.of(
-                "O motor de scraping retornou 0 resultados. Possível alteração de layout ou IP bloqueado na loja."
-        ));
+    public void notificarHealthCheckAdmin(String motivoTecnico) {
+        dispararTemplate(telefoneAdmin, "alerta_health_check", List.of(motivoTecnico));
     }
 
     private void dispararTemplate(String numeroOriginal, String templateName, List<String> variaveis) {
