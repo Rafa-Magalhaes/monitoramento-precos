@@ -4,13 +4,13 @@ Aplicação backend focada no rastreamento automatizado e inteligente de preços
 Motivação Arquitetural: A decisão de não fixar URLs garante resiliência ao sistema. Se a loja mudar a sua árvore de categorias ou a estrutura dos links internos, o monitoramento se mantém intacto, pois a aplicação simula uma pesquisa humana orgânica diretamente no motor de busca do e-commerce.
 
 🚀 Status do Projeto
-Fase Atual: Domínio Core e Infraestrutura Cloud finalizados.
+Fase Atual: Domínio Core, Infraestrutura Cloud e Mensageria Oficial (Meta Cloud API) finalizados.
 
 Funcionalidades já implementadas:
 
 [x] Setup Cloud-Native e CI/CD: Esteira no GitHub Actions gerando build automatizado e enviando a imagem otimizada para o Docker Hub.
 
-[x] Domínio de Usuário (Gestão de Identidade): Cadastro com validação estrita, higienização de dados na borda da API (Case-Insensitive e Trim automáticos) e tratamento global de exceções (RFC 7807). Atualização de e-mail e telefone com validação de unicidade. Implementação do "Botão Vermelho" de exclusão definitiva da conta.
+[x] Domínio de Usuário (Gestão de Identidade): Cadastro com validação estrita, higienização de dados na borda da API (Case-Insensitive e Trim automáticos) e tratamento global de exceções (RFC 7807). Atualização de e-mail e telefone com validação rigorosa de formato e unicidade. Implementação do "Botão Vermelho" de exclusão definitiva da conta.
 
 [x] Segurança Criptográfica: Hashing de senhas de altíssima segurança com Argon2id + Pepper.
 
@@ -22,15 +22,12 @@ Funcionalidades já implementadas:
 
 [x] Motor de Web Scraping Anti-Bot: Integração com Jsoup e rede de Smart Proxies (ScraperAPI). O algoritmo burla bloqueios de WAF e validações de Captcha rotacionando IPs residenciais para extrair o HTML limpo da vitrine de resultados.
 
-[x] Motor Autônomo (Scheduler) e Resiliência: O "Cérebro" do sistema roda a cada 12h utilizando @Scheduled. Orquestra a raspagem de dados com três barreiras de resiliência:
+[x] Motor Autônomo (Scheduler) e Resiliência: O "Cérebro" do sistema roda periodicamente utilizando @Scheduled. Orquestra a raspagem de dados com três barreiras de resiliência:
+- Fila de Retry em Memória: Falhas de rede da loja não quebram o fluxo; a missão sofre throttling (pausas táticas) e é retentada até 3 vezes.
+- Alarme Crítico (Health Check): Se uma busca retornar 0 resultados, o sistema aciona um alerta de emergência no WhatsApp do Admin indicando possível mudança no layout/DOM da loja.
+- Coveiro de Missões Zumbis: Job diário à meia-noite desativa buscas ativas há mais de 6 meses, poupando processamento e requisições de proxy.
 
-Fila de Retry em Memória: Falhas de rede da loja não quebram o fluxo; a missão sofre throttling (pausas táticas) e é retentada até 3 vezes.
-
-Alarme Crítico (Health Check): Se uma busca retornar 0 resultados, o sistema aciona um alerta de emergência no WhatsApp do Admin indicando possível mudança no layout/DOM da loja.
-
-Coveiro de Missões Zumbis: Job diário à meia-noite desativa buscas ativas há mais de 6 meses, poupando processamento e requisições de proxy.
-
-[x] Mensageria, Alertas e Anti-Spam: Disparo de mensagens automatizadas no WhatsApp via OpenFeign (Green API). Implementação de resiliência no envio (Fallback do 9º Dígito): o sistema consulta a Meta antes do disparo e injeta ou remove dinamicamente o 9º dígito caso haja divergência nos registros da operadora, blindando a API contra banimentos por SPAM.
+[x] Mensageria Oficial e Compliance (WhatsApp Cloud API): Disparo de templates de mensagens de marketing e utilidade via integração oficial com a Meta (OpenFeign), garantindo entrega de alta performance e blindagem total contra suspensões corporativas.
 
 🛠️ Stack Tecnológico
 Linguagem: Java 21 (Records, Streams)
@@ -43,18 +40,16 @@ Segurança: Spring Security, JWT, BouncyCastle (Argon2id)
 
 Bancos de Dados (DBaaS): PostgreSQL (Supabase) e MongoDB (Atlas)
 
-Integrações: Jsoup, OpenFeign, ScraperAPI (Proxy), Green API (WhatsApp)
+Integrações: Jsoup, OpenFeign, ScraperAPI (Proxy), WhatsApp Cloud API (Meta)
 
 🏛️ Destaques Arquiteturais
 1. Monolito Poliglota (Cloud Distributed)
    O sistema foi desenhado como um monolito modular que utiliza o melhor de dois mundos na persistência de dados, operando de forma 100% distribuída:
-
-PostgreSQL (Supabase na AWS): Gerencia dados estruturados e com necessidade de integridade referencial ACID (Ex: Usuários e Credenciais).
-
-MongoDB (Atlas): Armazenamento de alto volume e esquema dinâmico (Missões e a Série Histórica temporal de preços diários). Permite anexar variações de preços em milissegundos sem queries relacionais pesadas.
+- PostgreSQL (Supabase): Gerencia dados estruturados e com necessidade de integridade referencial ACID (Ex: Usuários e Credenciais).
+- MongoDB (Atlas): Armazenamento de alto volume e esquema dinâmico (Missões e a Série Histórica temporal de preços diários). Permite anexar variações de preços em milissegundos sem queries relacionais pesadas.
 
 2. Desenvolvimento Orientado a "Vertical Slice"
-   Toda a produção do código segue a orientação de Vertical Slice (Fatia Vertical). Cada funcionalidade é desenvolvida de ponta a ponta na mesma branch (Infraestrutura → Domínio → API), com exigência de 100% de cobertura de Testes Unitários nas camadas de Serviço e Transformação antes do merge, eliminando o acúmulo de código ocioso.
+   Toda a produção do código segue a orientação de Vertical Slice (Fatia Vertical). Cada funcionalidade é desenvolvida de ponta a ponta na mesma branch (Infraestrutura → Domínio → API), com exigência de cobertura estrita de Testes Unitários nas camadas de Serviço e Transformação antes do merge, eliminando o acúmulo de código ocioso.
 
 3. Segurança Anti-Mass Assignment e Blindagem de API
    A aplicação é protegida contra ataques de Injeção de Propriedades. Nenhuma Entidade vaza pela API, sendo o tráfego isolado por DTOs instanciados via Builder. Dados sensíveis (IDs, Roles, Datas de Criação) nunca são extraídos do payload da requisição, mas sim do Token JWT resolvido em tempo de execução, mitigando escalonamento de privilégios.
@@ -65,34 +60,25 @@ MongoDB (Atlas): Armazenamento de alto volume e esquema dinâmico (Missões e a 
 ⚙️ Como Executar o Projeto Localmente (Ambiente de Produção)
 A infraestrutura foi construída para rodar em nuvem de forma leve (otimizada para instâncias GCP e2-micro). Para subir a API apontando para os bancos de dados em nuvem, siga os passos:
 
-Crie o arquivo .env na raiz do diretório:
-O sistema injeta credenciais em tempo de execução para manter a segurança do repositório. Preencha com as credenciais reais:
+1. Crie o arquivo .env na raiz do diretório:
+   O sistema injeta credenciais em tempo de execução para manter a segurança do repositório. Preencha com as credenciais reais:
+   DB_USER=postgres.[SEU_USUARIO_SUPABASE]
+   DB_PASSWORD=[SUA_SENHA_SUPABASE]
+   DB_NAME=postgres
 
-DB_USER=postgres.[SEU_USUARIO_SUPABASE]
-DB_PASSWORD=[SUA_SENHA_SUPABASE]
-DB_NAME=postgres
+2. Baixe a Imagem Oficial e Inicie o Container:
+   O comando abaixo mapeia a porta HTTP, limita a alocação de memória RAM na JVM (prevenindo OOMKilled no Linux) e inicia a aplicação em segundo plano:
+   docker pull magalhaesrafa/monitoramento-precos:latest
 
-Baixe a Imagem Oficial e Inicie o Container:
-O comando abaixo mapeia a porta HTTP, limita a alocação de memória RAM na JVM (prevenindo OOMKilled no Linux) e inicia a aplicação em segundo plano:
-
-docker pull magalhaesrafa/monitoramento-precos:latest
-
-docker run -d
-
---name monitoramento-api
-
---restart unless-stopped
-
--p 80:8085
-
---env-file .env
-
--e JDK_JAVA_OPTIONS="-Xms256m -Xmx400m"
-
+docker run -d \
+--name monitoramento-api \
+--restart unless-stopped \
+-p 80:8085 \
+--env-file .env \
+-e JDK_JAVA_OPTIONS="-Xms256m -Xmx400m" \
 magalhaesrafa/monitoramento-precos:latest
 
-Acompanhe os Logs de Inicialização:
+3. Acompanhe os Logs de Inicialização:
+   docker logs -f monitoramento-api
 
-docker logs -f monitoramento-api
-
-(A aplicação estará disponível na porta 80 do seu host. Acesse /swagger-ui.html para visualizar a documentação interativa dos contratos REST).
+(A aplicação estará disponível na porta 80 do seu host. Acesse http://localhost:8085/swagger-ui.html para visualizar a documentação interativa dos contratos REST).

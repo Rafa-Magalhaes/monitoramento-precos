@@ -31,6 +31,7 @@ public class UsuarioCreateRequestDTO {
     private String senha;
 
     @NotBlank(message = "O telefone não pode estar em branco")
-    @Size(min = 10, max = 20, message = "O telefone deve ter entre 10 e 20 caracteres")
+    @Size(min = 11, max = 20, message = "O telefone deve ter entre 10 e 20 caracteres")
+    @Pattern(regexp = "^[0-9\\-\\+\\s\\(\\)]+$", message = "O telefone contém caracteres inválidos")
     private String telefone;
 }
