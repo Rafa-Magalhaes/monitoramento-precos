@@ -24,7 +24,6 @@ public class UsuarioService {
     private final MissaoBuscaService missaoBuscaService;
     private final PasswordEncoder passwordEncoder;
     private final UsuarioConverter usuarioConverter;
-    private final NotificacaoWhatsAppService notificacaoWhatsAppService;
 
     @Value("${api.security.pepper:MinhaChavePepperSecreta123!}")
     private String pepper;
@@ -43,11 +42,7 @@ public class UsuarioService {
 
         Usuario novoUsuario = usuarioConverter.toEntity(dto, senhaHash);
 
-        Usuario usuarioSalvo = usuarioRepository.save(novoUsuario);
-
-        notificacaoWhatsAppService.enviarBoasVindas(usuarioSalvo);
-
-        return usuarioSalvo;
+        return usuarioRepository.save(novoUsuario);
     }
 
     public void atualizarEmail(UUID usuarioIdToken, UsuarioUpdateEmailRequestDTO dto) {
