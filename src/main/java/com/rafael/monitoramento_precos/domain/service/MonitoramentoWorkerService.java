@@ -130,7 +130,9 @@ public class MonitoramentoWorkerService {
         log.info("Histórico salvo para '{}' | Mínimo: R${} | Médio: R${}",
                 missao.getTermoDaBusca(), produtoMaisBarato.getPreco(), precoMedio);
 
-        notificacaoWhatsAppService.processarGatilhosENotificar(missao, produtoMaisBarato, precoMedio, mediaAntiga);
+        // BYPASS TEMPORÁRIO PARA AMACIAMENTO DE PROXY:
+        // notificacaoWhatsAppService.processarGatilhosENotificar(missao, produtoMaisBarato, precoMedio, mediaAntiga);
+        log.info("BYPASS ATIVADO: Disparo de WhatsApp ignorado para poupar a Meta API.");
     }
 
     private void verificarHealthCheck(int totalMissoes, int missoesZeradas) {
@@ -144,7 +146,10 @@ public class MonitoramentoWorkerService {
                     String.format("%.1f", taxaFalha * 100), missoesZeradas, totalMissoes);
 
             String motivo = String.format("A taxa de falha atingiu %.1f%% (%d de %d missões zeradas). Possível Teste A/B no DOM.", taxaFalha * 100, missoesZeradas, totalMissoes);
-            notificacaoWhatsAppService.notificarHealthCheckAdmin(motivo);
+
+            // BYPASS TEMPORÁRIO PARA AMACIAMENTO DE PROXY:
+            // notificacaoWhatsAppService.notificarHealthCheckAdmin(motivo);
+            log.info("BYPASS ATIVADO: Disparo de Health Check via WhatsApp ignorado.");
         }
     }
 }
