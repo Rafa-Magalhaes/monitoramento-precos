@@ -33,11 +33,11 @@ public class MercadoLivreScraperService {
     public List<ProdutoScrapedDTO> buscarProdutos(MissaoBusca missao) throws Exception {
 
         String urlML = ML_BASE_URL + formatarTermoParaUrl(missao.getTermoDaBusca());
-        String urlAlvo = "http://api.scraperapi.com?api_key=" + proxyApiKey + "&url=" + urlML + "&premium=true&country_code=br";
 
-        log.info("Iniciando scraping via Proxy na URL original: {}", urlML);
+        String urlAlvo = "http://api.scraperapi.com?api_key=" + proxyApiKey + "&url=" + urlML + "&country_code=br";
 
-        // Conecta no Proxy
+        log.info("Iniciando scraping via Proxy de Datacenter na URL original: {}", urlML);
+
         Document doc = Jsoup.connect(urlAlvo)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .timeout(90000)

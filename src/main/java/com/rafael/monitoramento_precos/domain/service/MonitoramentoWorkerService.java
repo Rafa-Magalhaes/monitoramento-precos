@@ -30,7 +30,7 @@ public class MonitoramentoWorkerService {
 
     private record MissaoNaFila(MissaoBusca missao, int tentativaAtual) {}
 
-    @Scheduled(cron = "0 0 3,15 * * *")
+    @Scheduled(cron = "0 */5 * * * *")
     public void executarMonitoramentoDiario() {
         log.info("Iniciando rotina de Web Scraping autônoma com Fila de Retry...");
 
@@ -74,6 +74,8 @@ public class MonitoramentoWorkerService {
                     try { Thread.sleep(5000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
                 } else {
                     log.error("🚨 Missão [{}] ABORTADA após 3 tentativas falhas. O Proxy não conseguiu resolver.", missao.getTermoDaBusca());
+
+                    missoesZeradas++;
                 }
             }
         }
