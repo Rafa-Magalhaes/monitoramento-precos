@@ -30,7 +30,7 @@ public class MonitoramentoWorkerService {
 
     private record MissaoNaFila(MissaoBusca missao, int tentativaAtual) {}
 
-    @Scheduled(cron = "0 */5 * * * *")
+    @Scheduled(cron = "0 0 12,0 * * *")
     public void executarMonitoramentoDiario() {
         log.info("Iniciando rotina de Web Scraping autônoma com Fila de Retry...");
 
@@ -74,7 +74,6 @@ public class MonitoramentoWorkerService {
                     try { Thread.sleep(5000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
                 } else {
                     log.error("🚨 Missão [{}] ABORTADA após 3 tentativas falhas. O Proxy não conseguiu resolver.", missao.getTermoDaBusca());
-
                     missoesZeradas++;
                 }
             }
@@ -83,7 +82,7 @@ public class MonitoramentoWorkerService {
         verificarHealthCheck(totalMissoes, missoesZeradas);
     }
 
-    @Scheduled(cron = "0 0 0 * * *") // Roda todo dia exatamente à 00:00 (Meia-noite)
+    @Scheduled(cron = "0 0 3 * * *")
     public void desativarMissoesExpiradas() {
         log.info("Iniciando varredura de Missões Zumbis (Expiradas após 6 meses)...");
 
@@ -130,9 +129,7 @@ public class MonitoramentoWorkerService {
         log.info("Histórico salvo para '{}' | Mínimo: R${} | Médio: R${}",
                 missao.getTermoDaBusca(), produtoMaisBarato.getPreco(), precoMedio);
 
-        // BYPASS TEMPORÁRIO PARA AMACIAMENTO DE PROXY:
-        // notificacaoWhatsAppService.processarGatilhosENotificar(missao, produtoMaisBarato, precoMedio, mediaAntiga);
-        log.info("BYPASS ATIVADO: Disparo de WhatsApp ignorado para poupar a Meta API.");
+        notificacaoWhatsAppService.processarGatilhosENotificar(missao, produtoMaisBarato, precoMedio, mediaAntiga);
     }
 
     private void verificarHealthCheck(int totalMissoes, int missoesZeradas) {
@@ -147,9 +144,7 @@ public class MonitoramentoWorkerService {
 
             String motivo = String.format("A taxa de falha atingiu %.1f%% (%d de %d missões zeradas). Possível Teste A/B no DOM.", taxaFalha * 100, missoesZeradas, totalMissoes);
 
-            // BYPASS TEMPORÁRIO PARA AMACIAMENTO DE PROXY:
-            // notificacaoWhatsAppService.notificarHealthCheckAdmin(motivo);
-            log.info("BYPASS ATIVADO: Disparo de Health Check via WhatsApp ignorado.");
+            notificacaoWhatsAppService.notificarHealthCheckAdmin(motivo);
         }
     }
 }
