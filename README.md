@@ -70,16 +70,27 @@ Sem Foreign Keys nativas entre o SQL e o NoSQL, a exclusão de uma conta exige o
 
 ---
 
-## ⚙️ Como Executar o Projeto Localmente (Ambiente de Produção)
-A infraestrutura foi construída para rodar em nuvem de forma leve (otimizada para instâncias GCP e2-micro). Para subir a API apontando para os bancos de dados em nuvem, siga os passos:
+## ☁️ Acesso ao Ambiente na Nuvem (Live)
+O projeto está 100% operacional em nuvem, rodando em uma instância leve do Google Cloud Platform (GCP). Como o sistema opera estritamente como backend (sem uma interface gráfica frontend acoplada), toda a iteração de cadastro, autenticação e gestão de robôs deve ser feita diretamente pelos endpoints oficiais documentados.
 
-**1. Crie o arquivo `.env` na raiz do diretório:**
-O sistema injeta credenciais em tempo de execução para manter a segurança do repositório. Preencha com as credenciais reais:
+Para testar ou utilizar a aplicação ao vivo, acesse:
+
+🔗 Documentação e Interação (Swagger UI): http://34.170.234.74/swagger-ui/index.html#/
+
+🩺 Monitoramento de Saúde (Actuator): http://34.170.234.74/actuator/health
+
+## ⚙️ Como Executar a Imagem Docker (Self-Hosting / Local)
+Caso deseje subir uma cópia exata desta infraestrutura em um ambiente próprio ou para desenvolvimento local, siga os passos abaixo:
+
+1. Crie o arquivo .env na raiz do diretório:
+   O sistema injeta credenciais em tempo de execução para manter a segurança do repositório. Preencha com as credenciais reais:
+
 ```
-# Banco de Dados (Supabase)
-DB_USER=postgres.[SEU_USUARIO_SUPABASE]
-DB_PASSWORD=[SUA_SENHA_SUPABASE]
-DB_NAME=postgres
+# Banco de Dados (Supabase e MongoDB)
+SPRING_DATASOURCE_URL=jdbc:postgresql://[URL_DO_SEU_SUPABASE]:5432/postgres
+SPRING_DATASOURCE_USERNAME=[SEU_USUARIO_SUPABASE]
+SPRING_DATASOURCE_PASSWORD=[SUA_SENHA_SUPABASE]
+SPRING_DATA_MONGODB_URI=mongodb+srv://[SUA_URI_DO_MONGO_ATLAS]
 
 # Segurança (Tokens e Criptografia)
 API_SECURITY_TOKEN_SECRET=[SUA_CHAVE_JWT_SECRETA]
@@ -90,28 +101,23 @@ API_SCRAPERAPI_KEY=[SUA_CHAVE_DO_PROXY]
 WHATSAPP_PHONE_ID=[SEU_ID_TELEFONE_META]
 WHATSAPP_TOKEN=[SEU_TOKEN_META]
 ```
-
-**2. Baixe a Imagem Oficial e Inicie o Container:**
+2. Baixe a Imagem Oficial e Inicie o Container:
    O comando abaixo mapeia a porta HTTP, limita a alocação de memória RAM na JVM (prevenindo OOMKilled no Linux) e inicia a aplicação em segundo plano:
-```
+
+```bash
 docker pull magalhaesrafa/monitoramento-precos:latest
 
 docker run -d \
-  --name monitoramento-api \
-  --restart unless-stopped \
-  -p 80:8085 \
-  --env-file .env \
-  -e JDK_JAVA_OPTIONS="-Xms256m -Xmx400m" \
-  magalhaesrafa/monitoramento-precos:latest
+--name monitoramento-api \
+--restart unless-stopped \
+-p 80:8085 \
+--env-file .env \
+-e JDK_JAVA_OPTIONS="-Xms256m -Xmx400m" \
+magalhaesrafa/monitoramento-precos:latest
 ```
 
-**3. Acompanhe os Logs e a Saúde do Sistema:**
-```
-# Para ver os logs da inicialização
+3. Acompanhe os Logs e a Saúde do Sistema:
+
+```bash
 docker logs -f monitoramento-api
 ```
-
-A aplicação estará disponível na porta 80 do seu host. Acesse as seguintes rotas públicas para verificação:
-
-* **Documentação Interativa (Swagger):** http://localhost/swagger-ui.html
-* **Health Check de Banco de Dados:** http://localhost/actuator/health
