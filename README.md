@@ -6,6 +6,19 @@ Aplicação backend focada no rastreamento automatizado e inteligente de preços
 
 ---
 
+## 🏛️ Arquitetura do Sistema
+
+![Diagrama de Arquitetura do Sistema](./organograma.png)
+
+> 💡 **Legenda Arquitetural do Sistema:**
+> - **Camada de Entrada (Cinza):** Gatilhos temporais (Cron Jobs) rodando em UTC e ações do usuário.
+> - **Camada de API (Azul claro):** Entrypoints protegidos por Spring Security e filtro JWT.
+> - **Camdata de Domínio (Lilás/Amarelo):** O "Cérebro" do robô (`MonitoramentoWorker`), gerindo filas de retry, regras de negócio e ownership.
+> - **Camada de Infraestrutura (Vermelho):** Conectores de banco e o motor de Web Scraping via Smart Proxies (ScraperAPI + Jsoup).
+> - **Base e Destinos (Amarelo/Verde):** Persistência poliglota (PostgreSQL + MongoDB Atlas) e notificações oficiais via Meta Cloud API (WhatsApp do Usuário e Alerta Crítico ao Admin).
+
+---
+
 ## 🚀 Status do Projeto
 **Fase Atual:** Domínio Core, Infraestrutura Cloud, Mensageria Oficial (Meta Cloud API) e Observabilidade finalizados.
 
