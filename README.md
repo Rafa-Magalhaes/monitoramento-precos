@@ -8,7 +8,9 @@ Aplicação backend focada no rastreamento automatizado e inteligente de preços
 
 ## 🏛️ Arquitetura do Sistema
 
-![Diagrama de Arquitetura do Sistema](./organograma.png)
+<p align="center">
+  <img src="organograma.png" alt="Diagrama de Arquitetura do Sistema" width="100%">
+</p>
 
 > 💡 **Legenda Arquitetural do Sistema:**
 > - **Camada de Entrada (Cinza):** Gatilhos temporais (Cron Jobs) rodando em UTC e ações do usuário.
