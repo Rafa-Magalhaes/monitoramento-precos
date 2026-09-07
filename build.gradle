@@ -41,6 +41,9 @@ dependencies {
 	implementation 'org.flywaydb:flyway-core'
 	implementation 'org.flywaydb:flyway-database-postgresql'
 
+	// Importa o motor principal do Bucket4j para gerenciar os "baldes" de Rate Limiting na memória RAM do servidor.
+	implementation 'com.bucket4j:bucket4j-core:8.10.1'
+
 	// JWT
 	implementation 'com.auth0:java-jwt:4.4.0'
 

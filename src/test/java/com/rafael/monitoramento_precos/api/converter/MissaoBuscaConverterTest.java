@@ -1,10 +1,13 @@
 package com.rafael.monitoramento_precos.api.converter;
 
+import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaCreateRequestDTO;
+import com.rafael.monitoramento_precos.domain.model.MissaoBusca;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.UUID;
 
 class MissaoBuscaConverterTest {
 
@@ -15,6 +18,24 @@ class MissaoBuscaConverterTest {
         converter = new MissaoBuscaConverter();
     }
 
+    @Test
+    void toEntity_DeveGerarAssinaturaDeBuscaOrdenada_CenarioFeliz() {
+        // Cenário (Arrange)
+        UUID id = UUID.randomUUID();
+        MissaoBuscaCreateRequestDTO dto = MissaoBuscaCreateRequestDTO.builder()
+                .termoDaBusca("Zebra de Pelucia Amarela")
+                .build();
+
+        // Ação (Act)
+        // EXPLICAÇÃO MICRO: Invoca a entidade para simular a criação.
+        MissaoBusca entidade = converter.toEntity(dto, id);
+
+        // Verificação (Assert)
+        // EXPLICAÇÃO MICRO: Garante que as palavras filtradas pelo extrairPalavrasChave
+        // (AMARELA, PELUCIA, ZEBRA) foram unidas exatamente em ordem alfabética.
+        Assertions.assertEquals("AMARELA-PELUCIA-ZEBRA", entidade.getAssinaturaBusca());
+    }
+    
     @Test
     void extrairPalavrasChave_DeveLimparFatiarEFiltrarStopWords() {
         // Cenário (Arrange)
