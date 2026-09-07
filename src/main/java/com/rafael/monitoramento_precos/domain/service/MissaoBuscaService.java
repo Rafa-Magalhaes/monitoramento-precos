@@ -11,7 +11,9 @@ import com.rafael.monitoramento_precos.infrastructure.repository.MissaoBuscaRepo
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -25,16 +27,21 @@ public class MissaoBuscaService {
 
         List<MissaoBusca> missoesDoUsuario = missaoBuscaRepository.findByUsuarioId(usuarioId);
 
+        List<String> palavrasNovaMissao = missaoBuscaConverter.extrairPalavrasChave(dto.getTermoDaBusca());
+
+        Set<String> setNovasPalavras = new HashSet<>(palavrasNovaMissao);
+
         boolean jaMonitoraEsseTermo = missoesDoUsuario.stream()
-                .anyMatch(missao -> missao.getTermoDaBusca().equalsIgnoreCase(dto.getTermoDaBusca())
-                        && missao.getAtivo());
+                .anyMatch(missao -> {
+                    Set<String> setPalavrasExistentes = new HashSet<>(missao.getPalavrasChaveExigidas());
+                    return setPalavrasExistentes.equals(setNovasPalavras) && missao.getAtivo();
+                });
 
         if (jaMonitoraEsseTermo) {
-            throw new ConflictException("Você já possui uma missão de busca ativa para este exato termo.");
+            throw new ConflictException("Você já possui uma missão de busca ativa para estes mesmos termos.");
         }
 
         MissaoBusca novaMissao = missaoBuscaConverter.toEntity(dto, usuarioId);
-
         return missaoBuscaRepository.save(novaMissao);
     }
 
@@ -42,7 +49,7 @@ public class MissaoBuscaService {
         return missaoBuscaRepository.findByUsuarioId(usuarioId);
     }
 
-    // NOVO MÉTODO: Busca uma missão específica garantindo que pertence ao usuário logado
+    // NOVO METODO: Busca uma missão específica garantindo que pertence ao usuário logado
     public MissaoBusca buscarPorId(String missaoId, UUID usuarioIdToken) {
         MissaoBusca missao = missaoBuscaRepository.findById(missaoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Missão de busca não encontrada."));
@@ -77,17 +84,26 @@ public class MissaoBuscaService {
             throw new ConflictException("Acesso negado. Você não tem permissão para alterar esta missão.");
         }
 
+        List<String> palavrasNovoTermo = missaoBuscaConverter.extrairPalavrasChave(dto.getTermoDaBusca());
+        Set<String> setNovasPalavras = new HashSet<>(palavrasNovoTermo);
+
         boolean jaMonitoraEsseTermo = missaoBuscaRepository.findByUsuarioId(usuarioIdToken).stream()
-                .anyMatch(m -> !m.getId().equals(missaoId)
-                        && m.getTermoDaBusca().equalsIgnoreCase(dto.getTermoDaBusca())
-                        && m.getAtivo());
+                .anyMatch(m -> {
+                    // Ignora a própria missão sendo editada e missões inativas
+                    if (m.getId().equals(missaoId) || !m.getAtivo()) {
+                        return false;
+                    }
+                    Set<String> setPalavrasExistentes = new HashSet<>(m.getPalavrasChaveExigidas());
+                    return setPalavrasExistentes.equals(setNovasPalavras);
+                });
 
         if (jaMonitoraEsseTermo) {
-            throw new ConflictException("Você já possui outra missão de busca ativa para este exato termo.");
+            throw new ConflictException("Você já possui outra missão de busca ativa para estes mesmos termos.");
         }
 
         missao.setTermoDaBusca(dto.getTermoDaBusca());
-        missao.setPalavrasChaveExigidas(missaoBuscaConverter.extrairPalavrasChave(dto.getTermoDaBusca()));
+
+        missao.setPalavrasChaveExigidas(palavrasNovoTermo);
 
         missaoBuscaRepository.save(missao);
     }
