@@ -40,7 +40,7 @@ public class MercadoLivreScraperService {
 
         Document doc = Jsoup.connect(urlAlvo)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .timeout(90000)
+                .timeout(150000)
                 .maxBodySize(0)
                 .get();
 

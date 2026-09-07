@@ -67,7 +67,7 @@ class NotificacaoWhatsAppServiceTest {
 
         WhatsAppCloudMessageRequestDTO payload = captor.getValue();
 
-        Assertions.assertEquals("5581999999999", payload.getTo());
+        Assertions.assertEquals("558199999999", payload.getTo());
         Assertions.assertEquals("alerta_preco_atingido", payload.getTemplate().getName());
 
         List<WhatsAppCloudMessageRequestDTO.Parameter> params = payload.getTemplate().getComponents().get(0).getParameters();

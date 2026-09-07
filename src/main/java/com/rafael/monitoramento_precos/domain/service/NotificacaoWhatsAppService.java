@@ -67,11 +67,21 @@ public class NotificacaoWhatsAppService {
 
     private void dispararTemplate(String numeroOriginal, String templateName, List<String> variaveis) {
         String numeroLimpo = numeroOriginal.replaceAll("\\D", "");
+
         if (!numeroLimpo.startsWith("55")) {
             numeroLimpo = "55" + numeroLimpo;
         }
 
-        // Transforma a lista de Strings Java no modelo de Parâmetros exigido pela Meta
+        // Filtro Inteligente do 9º Dígito para a API da Meta
+        if (numeroLimpo.length() == 13) {
+            int ddd = Integer.parseInt(numeroLimpo.substring(2, 4));
+
+            // Se o DDD for maior que 27 (Fora de SP/RJ/ES), removemos o 9º dígito
+            if (ddd > 27) {
+                numeroLimpo = numeroLimpo.substring(0, 4) + numeroLimpo.substring(5);
+            }
+        }
+
         List<WhatsAppCloudMessageRequestDTO.Parameter> parameters = variaveis.stream()
                 .map(valor -> WhatsAppCloudMessageRequestDTO.Parameter.builder().text(valor).build())
                 .toList();
