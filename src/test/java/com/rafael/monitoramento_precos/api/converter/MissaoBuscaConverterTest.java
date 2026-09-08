@@ -35,7 +35,7 @@ class MissaoBuscaConverterTest {
         // (AMARELA, PELUCIA, ZEBRA) foram unidas exatamente em ordem alfabética.
         Assertions.assertEquals("AMARELA-PELUCIA-ZEBRA", entidade.getAssinaturaBusca());
     }
-    
+
     @Test
     void extrairPalavrasChave_DeveLimparFatiarEFiltrarStopWords() {
         // Cenário (Arrange)
@@ -45,13 +45,19 @@ class MissaoBuscaConverterTest {
         List<String> resultado = converter.extrairPalavrasChave(termoSujo);
 
         // Verificação (Assert)
-        Assertions.assertEquals(4, resultado.size());
+        // EXPLICAÇÃO MICRO: O tamanho esperado passa a ser 5, pois a nova regra baseada em Stop Words
+        // protege numerais curtos. O "15" agora sobrevive à filtragem.
+        Assertions.assertEquals(5, resultado.size());
         Assertions.assertTrue(resultado.contains("IPHONE"));
+
+        // EXPLICAÇÃO MICRO: Adicionamos a validação explícita para garantir que o "15" não foi descartado.
+        Assertions.assertTrue(resultado.contains("15"));
+
         Assertions.assertTrue(resultado.contains("PRO"));
         Assertions.assertTrue(resultado.contains("MAX"));
         Assertions.assertTrue(resultado.contains("256GB"));
 
-        // Garante que a Stop Word "de" (2 letras) foi ignorada
+        // EXPLICAÇÃO MICRO: Garante que a Stop Word "de" foi efetivamente interceptada pela nossa nova lista restritiva.
         Assertions.assertFalse(resultado.contains("DE"));
     }
 }
