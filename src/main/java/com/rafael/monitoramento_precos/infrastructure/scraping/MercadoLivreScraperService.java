@@ -13,9 +13,17 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.math.BigDecimal;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.security.cert.X509Certificate;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -25,8 +33,18 @@ public class MercadoLivreScraperService {
 
     private final ObjectMapper objectMapper;
 
-    @Value("${api.scraperapi.key}")
-    private String proxyApiKey;
+    // Novas credenciais injetadas do application-dev.yml
+    @Value("${api.brightdata.host}")
+    private String proxyHost;
+
+    @Value("${api.brightdata.port}")
+    private int proxyPort;
+
+    @Value("${api.brightdata.username}")
+    private String proxyUser;
+
+    @Value("${api.brightdata.password}")
+    private String proxyPassword;
 
     private static final String ML_BASE_URL = "https://lista.mercadolivre.com.br/";
 
@@ -34,20 +52,23 @@ public class MercadoLivreScraperService {
 
         String urlML = ML_BASE_URL + formatarTermoParaUrl(missao.getTermoDaBusca());
 
-        String urlAlvo = "http://api.scraperapi.com?api_key=" + proxyApiKey + "&render=true&premium=true&url=" + urlML + "&country_code=br";
+        log.info("Iniciando scraping via Bright Data Web Unlocker na URL: {}", urlML);
 
-        log.info("Iniciando scraping via Proxy de Datacenter na URL original: {}", urlML);
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
 
-        Document doc = Jsoup.connect(urlAlvo)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        String authString = proxyUser + ":" + proxyPassword;
+        String encodedAuth = Base64.getEncoder().encodeToString(authString.getBytes());
+
+        Document doc = Jsoup.connect(urlML)
+                .proxy(proxy)
+                .header("Proxy-Authorization", "Basic " + encodedAuth)
+                .sslSocketFactory(socketFactory())
                 .timeout(150000)
                 .maxBodySize(0)
                 .get();
 
         log.info("================ RAIOS-X DO SCRAPING ================");
         log.info("TÍTULO DA PÁGINA: {}", doc.title());
-
-        // IMPRESSÃO TEMPORÁRIA DO HTML BRUTO PARA DEBUG
         log.info("HTML BRUTO: {}", doc.html());
 
         List<ProdutoScrapedDTO> produtosValidos = extrairViaJsonLd(doc, missao);
@@ -89,7 +110,7 @@ public class MercadoLivreScraperService {
                                 encontrados.add(ProdutoScrapedDTO.builder()
                                         .titulo(titulo)
                                         .preco(new BigDecimal(precoStr))
-                                        .linkProduto(link) // ML geralmente entrega a URL completa aqui
+                                        .linkProduto(link)
                                         .build());
                             }
                         }
@@ -108,7 +129,6 @@ public class MercadoLivreScraperService {
         Elements cardsProdutos = doc.select("li.ui-search-layout__item, .poly-card");
         log.info("QTD DE CARDS ENCONTRADOS (Fallback HTML): {}", cardsProdutos.size());
 
-        // Mudança no FOR para ter um contador (int i)
         for (int i = 0; i < cardsProdutos.size(); i++) {
             Element card = cardsProdutos.get(i);
 
@@ -118,7 +138,6 @@ public class MercadoLivreScraperService {
             String precoTexto = extrairTextoSeguro(card, ".andes-money-amount__fraction");
             String linkParcial = extrairLinkSeguro(card, "a");
 
-            // --- INÍCIO DO RAIO-X (Imprime apenas o primeiro produto da lista para não poluir o log) ---
             if (i == 0) {
                 log.info("--- DEBUG DO PRIMEIRO PRODUTO EXTRAÍDO ---");
                 log.info("TITULO ENCONTRADO: [{}]", titulo);
@@ -126,7 +145,6 @@ public class MercadoLivreScraperService {
                 log.info("LINK ENCONTRADO: [{}]", linkParcial);
                 log.info("------------------------------------------");
             }
-            // --- FIM DO RAIO-X ---
 
             if (titulo.isBlank() || precoTexto.isBlank() || linkParcial.isBlank()) continue;
 
@@ -179,7 +197,6 @@ public class MercadoLivreScraperService {
 
     private BigDecimal converterPrecoParaBigDecimal(String precoString) {
         try {
-            // O ML usa ponto para separar milhares (ex: 1.999). Precisamos limpar tudo.
             String valorLimpo = precoString.replaceAll("[^0-9]", "");
             return new BigDecimal(valorLimpo);
         } catch (Exception e) {
@@ -195,21 +212,33 @@ public class MercadoLivreScraperService {
     }
 
     private String extrairTituloBlindado(Element card) {
-        // Tentativa 1: Busca pela classe, independente se é h2, span ou div
         String titulo = extrairTextoSeguro(card, ".poly-component__title, .ui-search-item__title");
         if (!titulo.isBlank()) return titulo;
 
-        // Tentativa 2: Varre todos os H2 do card e pega o primeiro que NÃO seja vazio
         for (Element h2 : card.select("h2")) {
             if (!h2.text().isBlank()) return h2.text();
         }
 
-        // Tentativa 3: Extrai o texto visível de dentro do link principal
         Element link = card.selectFirst("a");
         if (link != null && !link.text().isBlank()) {
             return link.text();
         }
 
-        return ""; // Só retorna vazio se as 3 estratégias falharem
+        return "";
+    }
+
+    private SSLSocketFactory socketFactory() {
+        TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+            public java.security.cert.X509Certificate[] getAcceptedIssuers() { return null; }
+            public void checkClientTrusted(X509Certificate[] certs, String authType) { }
+            public void checkServerTrusted(X509Certificate[] certs, String authType) { }
+        }};
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            return sslContext.getSocketFactory();
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao criar SSLSocketFactory para o Proxy", e);
+        }
     }
 }
