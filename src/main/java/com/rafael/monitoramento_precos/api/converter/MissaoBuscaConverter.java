@@ -11,16 +11,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class MissaoBuscaConverter {
 
     public MissaoBusca toEntity(MissaoBuscaCreateRequestDTO dto, UUID usuarioId) {
+        List<String> palavrasExtraidas = extrairPalavrasChave(dto.getTermoDaBusca());
+
+        String assinatura = palavrasExtraidas.stream()
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining("-"));
+
         return MissaoBusca.builder()
                 .usuarioId(usuarioId)
                 .termoDaBusca(dto.getTermoDaBusca())
+                .assinaturaBusca(assinatura)
                 .precoAlvo(dto.getPrecoAlvo())
-                .palavrasChaveExigidas(extrairPalavrasChave(dto.getTermoDaBusca()))
+                .palavrasChaveExigidas(palavrasExtraidas)
                 .palavrasChaveProibidas(dto.getPalavrasChaveProibidas() != null ? dto.getPalavrasChaveProibidas() : new ArrayList<>())
                 .dataExpiracao(LocalDateTime.now().plusMonths(6))
                 .build();

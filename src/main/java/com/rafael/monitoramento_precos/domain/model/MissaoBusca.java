@@ -4,6 +4,8 @@ import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -13,6 +15,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Document(collection = "missoes_busca")
+@CompoundIndexes({
+        @CompoundIndex(name = "uk_usuario_assinatura", def = "{'usuarioId': 1, 'assinaturaBusca': 1}", unique = true)
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,13 +28,11 @@ public class MissaoBusca {
 
     @Id
     private String id;
-
     private UUID usuarioId;
 
-
-    // --- REGRAS DE RASTREAMENTO E FILTRAGEM ---
-
     private String termoDaBusca;
+
+    private String assinaturaBusca;
 
     @Builder.Default
     private List<String> palavrasChaveExigidas = new ArrayList<>();
@@ -37,25 +40,17 @@ public class MissaoBusca {
     @Builder.Default
     private List<String> palavrasChaveProibidas = new ArrayList<>();
 
-
-    // --- REGRAS DE NEGÓCIO E VALORES ---
-
     private BigDecimal precoAlvo;
-
     private BigDecimal mediaPrecoHistorico;
 
     @Builder.Default
     private List<HistoricoPreco> historicoDePrecos = new ArrayList<>();
-
-
-    // --- AUDITORIA E CONTROLE ---
 
     @Builder.Default
     private Boolean ativo = true;
 
     @CreatedDate
     private LocalDateTime dataCriacao;
-
     private LocalDateTime dataExpiracao;
 
     @LastModifiedDate
