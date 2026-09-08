@@ -115,7 +115,7 @@ class MonitoramentoWorkerServiceTest {
     }
 
     @Test
-    void executarMonitoramentoDiario_DeveAcionarHealthCheck_QuandoProxyFalharTresVezesSeguidas() throws Exception {
+    void executarMonitoramentoDiario_DeveAcionarHealthCheck_QuandoProxyFalharCincoVezesSeguidas() throws Exception {
         MissaoBusca missao = MissaoBusca.builder().termoDaBusca("Teste de Proxy 403").ativo(true).build();
         Mockito.when(missaoBuscaRepository.findByAtivoTrue()).thenReturn(List.of(missao));
 
@@ -126,6 +126,6 @@ class MonitoramentoWorkerServiceTest {
 
         Mockito.verify(notificacaoWhatsAppService, Mockito.times(1)).notificarHealthCheckAdmin(Mockito.anyString());
 
-        Mockito.verify(scraperService, Mockito.times(3)).buscarProdutos(missao);
+        Mockito.verify(scraperService, Mockito.times(5)).buscarProdutos(missao);
     }
 }

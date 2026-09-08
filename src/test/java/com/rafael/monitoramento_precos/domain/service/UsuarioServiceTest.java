@@ -2,6 +2,7 @@ package com.rafael.monitoramento_precos.domain.service;
 
 import com.rafael.monitoramento_precos.api.converter.UsuarioConverter;
 import com.rafael.monitoramento_precos.api.dto.request.UsuarioCreateRequestDTO;
+import com.rafael.monitoramento_precos.api.dto.request.UsuarioUpdateEmailRequestDTO;
 import com.rafael.monitoramento_precos.domain.exception.ConflictException;
 import com.rafael.monitoramento_precos.domain.model.Usuario;
 import com.rafael.monitoramento_precos.infrastructure.repository.UsuarioRepository;
@@ -82,5 +83,33 @@ class UsuarioServiceTest {
 
         Mockito.verify(missaoBuscaService, Mockito.times(1)).excluirTodasMissoes(usuarioId);
         Mockito.verify(usuarioRepository, Mockito.times(1)).delete(usuarioMock);
+    }
+
+    @Test
+    void atualizarEmail_CenarioFeliz_DeveSalvarNovoEmail() {
+        UUID usuarioId = UUID.randomUUID();
+        UsuarioUpdateEmailRequestDTO dto = UsuarioUpdateEmailRequestDTO.builder().email("novo@email.com").build();
+        Usuario usuario = Usuario.builder().id(usuarioId).email("antigo@email.com").build();
+
+        Mockito.when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        Mockito.when(usuarioRepository.existsByEmail("novo@email.com")).thenReturn(false);
+
+        usuarioService.atualizarEmail(usuarioId, dto);
+
+        Assertions.assertEquals("novo@email.com", usuario.getEmail());
+        Mockito.verify(usuarioRepository, Mockito.times(1)).save(usuario);
+    }
+
+    @Test
+    void atualizarEmail_CenarioTriste_LancaExceptionSeEmailEmUso() {
+        UUID usuarioId = UUID.randomUUID();
+        UsuarioUpdateEmailRequestDTO dto = UsuarioUpdateEmailRequestDTO.builder().email("em-uso@email.com").build();
+        Usuario usuario = Usuario.builder().id(usuarioId).email("antigo@email.com").build();
+
+        Mockito.when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        Mockito.when(usuarioRepository.existsByEmail("em-uso@email.com")).thenReturn(true);
+
+        Assertions.assertThrows(ConflictException.class, () -> usuarioService.atualizarEmail(usuarioId, dto));
+        Mockito.verify(usuarioRepository, Mockito.never()).save(Mockito.any());
     }
 }

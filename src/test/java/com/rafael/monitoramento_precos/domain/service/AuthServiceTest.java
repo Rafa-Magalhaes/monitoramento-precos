@@ -69,4 +69,15 @@ class AuthServiceTest {
 
         Assertions.assertThrows(BadCredentialsException.class, () -> authService.autenticar(dto));
     }
+
+    @Test
+    void autenticar_DeveLancarException_QuandoSenhaEstiverIncorreta() {
+        LoginRequestDTO dto = LoginRequestDTO.builder().email("babi@gmail.com").senha("senhaErrada").build();
+        Usuario usuarioBanco = Usuario.builder().email("babi@gmail.com").senha("hashNoBanco").build();
+
+        Mockito.when(usuarioRepository.findByEmail("babi@gmail.com")).thenReturn(Optional.of(usuarioBanco));
+        Mockito.when(passwordEncoder.matches("senhaErradapimenta-teste", "hashNoBanco")).thenReturn(false);
+
+        Assertions.assertThrows(BadCredentialsException.class, () -> authService.autenticar(dto));
+    }
 }
