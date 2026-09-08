@@ -10,11 +10,17 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
 public class MissaoBuscaConverter {
+
+    private static final Set<String> STOP_WORDS = Set.of(
+            "de", "do", "da", "dos", "das", "e", "o", "a", "os", "as",
+            "em", "no", "na", "um", "uma", "para", "com", "por"
+    );
 
     public MissaoBusca toEntity(MissaoBuscaCreateRequestDTO dto, UUID usuarioId) {
         List<String> palavrasExtraidas = extrairPalavrasChave(dto.getTermoDaBusca());
@@ -58,9 +64,11 @@ public class MissaoBuscaConverter {
         // 2. Troca qualquer pontuação (vírgula, ponto, traço) por espaço em branco
         String termoLimpo = termoSemAcento.replaceAll("\\p{Punct}", " ");
 
-        // 3. Converte para maiúsculo, recorta e FILTRA as Stop Words (1 ou 2 caracteres)
+        // 3. Converte para maiúsculo, recorta e FILTRA as Stop Words baseando-se na lista explícita
         return Arrays.stream(termoLimpo.trim().toUpperCase().split("\\s+"))
-                .filter(palavra -> palavra.length() > 2) // Nova trava de segurança de negócio!
+                .filter(palavra -> !palavra.isBlank())
+
+                .filter(palavra -> !STOP_WORDS.contains(palavra.toLowerCase()))
                 .toList();
     }
 }

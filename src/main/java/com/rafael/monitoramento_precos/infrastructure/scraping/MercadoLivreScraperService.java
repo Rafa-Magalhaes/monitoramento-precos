@@ -34,7 +34,7 @@ public class MercadoLivreScraperService {
 
         String urlML = ML_BASE_URL + formatarTermoParaUrl(missao.getTermoDaBusca());
 
-        String urlAlvo = "http://api.scraperapi.com?api_key=" + proxyApiKey + "&render=true&url=" + urlML + "&country_code=br";
+        String urlAlvo = "http://api.scraperapi.com?api_key=" + proxyApiKey + "&render=true&premium=true&url=" + urlML + "&country_code=br";
 
         log.info("Iniciando scraping via Proxy de Datacenter na URL original: {}", urlML);
 
@@ -114,7 +114,7 @@ public class MercadoLivreScraperService {
 
             if (encontrados.size() >= 5) break;
 
-            String titulo = extrairTituloBlindado(card);;
+            String titulo = extrairTituloBlindado(card);
             String precoTexto = extrairTextoSeguro(card, ".andes-money-amount__fraction");
             String linkParcial = extrairLinkSeguro(card, "a");
 

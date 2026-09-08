@@ -53,7 +53,7 @@ public class MonitoramentoWorkerService {
             int tentativa = itemAtual.tentativaAtual();
 
             try {
-                log.info("Processando missão: [{}] (Tentativa {}/3)", missao.getTermoDaBusca(), tentativa);
+                log.info("Processando missão: [{}] (Tentativa {}/5)", missao.getTermoDaBusca(), tentativa);
                 List<ProdutoScrapedDTO> produtos = mercadoLivreScraperService.buscarProdutos(missao);
 
                 if (produtos.isEmpty()) {
@@ -68,12 +68,12 @@ public class MonitoramentoWorkerService {
             } catch (Exception e) {
                 log.error("Falha de rede/proxy na missão [{}]: {}", missao.getTermoDaBusca(), e.getMessage());
 
-                if (tentativa < 3) {
+                if (tentativa < 5) {
                     log.warn("Enviando missão [{}] para o FINAL da fila de reprocessamento...", missao.getTermoDaBusca());
                     fila.add(new MissaoNaFila(missao, tentativa + 1));
                     try { Thread.sleep(5000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
                 } else {
-                    log.error("🚨 Missão [{}] ABORTADA após 3 tentativas falhas. O Proxy não conseguiu resolver.", missao.getTermoDaBusca());
+                    log.error("🚨 Missão [{}] ABORTADA após 5 tentativas falhas. O Proxy não conseguiu resolver.", missao.getTermoDaBusca());
                     missoesZeradas++;
                 }
             }

@@ -11,8 +11,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 		"api.security.token.secret=chave-falsa-jwt",
 		"api.security.pepper=pimenta-falsa-pepper",
 		"api.scraperapi.key=chave-falsa-scraperapi-para-testes",
-		"api.whatsapp.id-instance=teste",
-		"api.whatsapp.api-token-instance=teste"
+		"api.whatsapp.cloud.url=https://graph.facebook.com/v19.0",
+		"api.whatsapp.cloud.phone-number-id=123456789",
+		"api.whatsapp.cloud.access-token=token_falso_ci"
 })
 class MonitoramentoPrecosApplicationTests {
 
