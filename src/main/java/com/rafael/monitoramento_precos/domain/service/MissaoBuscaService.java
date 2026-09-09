@@ -116,7 +116,12 @@ public class MissaoBuscaService {
             throw new ConflictException("Acesso negado. Você não tem permissão para alterar esta missão.");
         }
 
-        List<String> novaBlacklist = dto.getPalavrasChaveProibidas() != null ? dto.getPalavrasChaveProibidas() : List.of();
+        List<String> novaBlacklist = dto.getPalavrasChaveProibidas() != null
+                ? dto.getPalavrasChaveProibidas().stream()
+                .filter(p -> p != null && !p.isBlank())
+                .map(p -> p.trim().toUpperCase())
+                .toList()
+                : List.of();
 
         missao.setPalavrasChaveProibidas(novaBlacklist);
 
