@@ -2,6 +2,7 @@ package com.rafael.monitoramento_precos.domain.service;
 
 import com.rafael.monitoramento_precos.api.converter.MissaoBuscaConverter;
 import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaCreateRequestDTO;
+import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaUpdateBlacklistRequestDTO;
 import com.rafael.monitoramento_precos.api.dto.request.MissaoBuscaUpdateTermoRequestDTO;
 import com.rafael.monitoramento_precos.domain.exception.ConflictException;
 import com.rafael.monitoramento_precos.domain.model.MissaoBusca;
@@ -14,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -204,5 +206,33 @@ class MissaoBuscaServiceTest {
                 missaoBuscaService.buscarPorId(idMissao, hacker));
 
         Assertions.assertEquals("Acesso negado. Você não tem permissão para acessar esta missão.", exception.getMessage());
+    }
+
+    @Test
+    void atualizarBlacklist_DeveHigienizarEAtualizarLista() {
+        // EXPLICAÇÃO MICRO: Cenário (Arrange) - Preparamos as variáveis e simulamos a lista suja chegando na requisição de atualização (PATCH).
+        UUID usuarioId = UUID.randomUUID();
+        String missaoId = "missao-1";
+        MissaoBuscaUpdateBlacklistRequestDTO dto = MissaoBuscaUpdateBlacklistRequestDTO.builder()
+                .palavrasChaveProibidas(Arrays.asList("  usado ", "quebrado", "", null))
+                .build();
+
+        MissaoBusca missaoAtual = MissaoBusca.builder()
+                .id(missaoId)
+                .usuarioId(usuarioId)
+                .palavrasChaveProibidas(List.of()) // Nasce vazia no banco
+                .build();
+
+        // EXPLICAÇÃO MICRO: Ensinamos o Mockito a devolver a nossa missão fictícia quando o Service for buscar no banco.
+        Mockito.when(missaoBuscaRepository.findById(missaoId)).thenReturn(Optional.of(missaoAtual));
+
+        // EXPLICAÇÃO MICRO: Ação (Act) - Executamos a atualização.
+        missaoBuscaService.atualizarBlacklist(missaoId, usuarioId, dto);
+
+        // EXPLICAÇÃO MICRO: Verificação (Assert) - Garantimos que a entidade em memória recebeu as strings perfeitamente limpas,
+        // maiúsculas e sem nulos. Por fim, verificamos se o repository.save() foi chamado para persistir a limpeza.
+        Assertions.assertEquals(2, missaoAtual.getPalavrasChaveProibidas().size());
+        Assertions.assertTrue(missaoAtual.getPalavrasChaveProibidas().containsAll(List.of("USADO", "QUEBRADO")));
+        Mockito.verify(missaoBuscaRepository, Mockito.times(1)).save(missaoAtual);
     }
 }

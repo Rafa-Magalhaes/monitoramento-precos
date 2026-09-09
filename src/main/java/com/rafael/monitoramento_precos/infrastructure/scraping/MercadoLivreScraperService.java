@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rafael.monitoramento_precos.domain.model.MissaoBusca;
 import com.rafael.monitoramento_precos.infrastructure.scraping.dto.ProdutoScrapedDTO;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -12,18 +13,18 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.math.BigDecimal;
+import java.net.Authenticator;
 import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.security.cert.X509Certificate;
 import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -33,7 +34,6 @@ public class MercadoLivreScraperService {
 
     private final ObjectMapper objectMapper;
 
-    // Novas credenciais injetadas do application-dev.yml
     @Value("${api.brightdata.host}")
     private String proxyHost;
 
@@ -56,12 +56,8 @@ public class MercadoLivreScraperService {
 
         Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
 
-        String authString = proxyUser + ":" + proxyPassword;
-        String encodedAuth = Base64.getEncoder().encodeToString(authString.getBytes());
-
         Document doc = Jsoup.connect(urlML)
                 .proxy(proxy)
-                .header("Proxy-Authorization", "Basic " + encodedAuth)
                 .sslSocketFactory(socketFactory())
                 .timeout(150000)
                 .maxBodySize(0)
@@ -240,5 +236,20 @@ public class MercadoLivreScraperService {
         } catch (Exception e) {
             throw new RuntimeException("Falha ao criar SSLSocketFactory para o Proxy", e);
         }
+    }
+
+    @PostConstruct
+    public void configurarProxyGlobal() {
+        System.setProperty("jdk.http.auth.tunneling.disabledSchemes", "");
+
+        Authenticator.setDefault(new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                if (getRequestingHost().equals(proxyHost)) {
+                    return new PasswordAuthentication(proxyUser, proxyPassword.toCharArray());
+                }
+                return null;
+            }
+        });
     }
 }

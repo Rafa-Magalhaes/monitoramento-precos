@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,5 +60,25 @@ class MissaoBuscaConverterTest {
 
         // EXPLICAÇÃO MICRO: Garante que a Stop Word "de" foi efetivamente interceptada pela nossa nova lista restritiva.
         Assertions.assertFalse(resultado.contains("DE"));
+    }
+
+    @Test
+    void toEntity_DeveHigienizarPalavrasProibidas() {
+        // EXPLICAÇÃO MICRO: Cenário (Arrange) - Simulamos o front-end enviando uma lista catastrófica:
+        // Contém espaços soltos, letras minúsculas, uma string vazia e um valor nulo malicioso.
+        UUID id = UUID.randomUUID();
+        MissaoBuscaCreateRequestDTO dto = MissaoBuscaCreateRequestDTO.builder()
+                .termoDaBusca("Notebook")
+                .palavrasChaveProibidas(Arrays.asList("  amd ", "nvidia", " ", null))
+                .build();
+
+        // EXPLICAÇÃO MICRO: Ação (Act) - Passamos o DTO sujo para o metodo que acabamos de refatorar.
+        MissaoBusca entidade = converter.toEntity(dto, id);
+
+        // EXPLICAÇÃO MICRO: Verificação (Assert) - A prova de fogo. A lista resultante deve ignorar o null e o espaço em branco,
+        // sobrando apenas 2 itens. Além disso, "  amd " deve virar "AMD" e "nvidia" deve virar "NVIDIA".
+        Assertions.assertEquals(2, entidade.getPalavrasChaveProibidas().size());
+        Assertions.assertTrue(entidade.getPalavrasChaveProibidas().contains("AMD"));
+        Assertions.assertTrue(entidade.getPalavrasChaveProibidas().contains("NVIDIA"));
     }
 }
