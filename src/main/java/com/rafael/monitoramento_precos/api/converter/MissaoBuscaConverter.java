@@ -30,13 +30,20 @@ public class MissaoBuscaConverter {
                 .sorted()
                 .collect(Collectors.joining("-"));
 
+        List<String> blacklistHigienizada = dto.getPalavrasChaveProibidas() != null
+                ? dto.getPalavrasChaveProibidas().stream()
+                .filter(p -> p != null && !p.isBlank())
+                .map(p -> p.trim().toUpperCase())
+                .toList()
+                : new ArrayList<>();
+
         return MissaoBusca.builder()
                 .usuarioId(usuarioId)
                 .termoDaBusca(dto.getTermoDaBusca())
                 .assinaturaBusca(assinatura)
                 .precoAlvo(dto.getPrecoAlvo())
                 .palavrasChaveExigidas(palavrasExtraidas)
-                .palavrasChaveProibidas(dto.getPalavrasChaveProibidas() != null ? dto.getPalavrasChaveProibidas() : new ArrayList<>())
+                .palavrasChaveProibidas(blacklistHigienizada)
                 .dataExpiracao(LocalDateTime.now().plusMonths(6))
                 .build();
     }

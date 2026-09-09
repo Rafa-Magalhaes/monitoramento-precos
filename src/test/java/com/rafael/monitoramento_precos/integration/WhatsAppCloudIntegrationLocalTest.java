@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
         "api.whatsapp.cloud.url=https://graph.facebook.com/v19.0",
         "api.whatsapp.cloud.phone-number-id=123456789",
         "api.whatsapp.cloud.access-token=token_falso_ci",
-        "api.scraperapi.key=chave-mock-ci",
         "api.brightdata.host=host-falso",
         "api.brightdata.port=0000",
         "api.brightdata.username=user-falso",
