@@ -65,7 +65,6 @@ public class MercadoLivreScraperService {
 
         log.info("================ RAIOS-X DO SCRAPING ================");
         log.info("TÍTULO DA PÁGINA: {}", doc.title());
-        log.info("HTML BRUTO: {}", doc.html());
 
         List<ProdutoScrapedDTO> produtosValidos = extrairViaJsonLd(doc, missao);
 
